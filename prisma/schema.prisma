@@ -1,0 +1,278 @@
+// backend/prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  pending
+  paid
+  cancelled
+  expired
+}
+
+enum DiscountType {
+  percentage
+  fixed
+}
+
+enum PointTransactionType {
+  earned
+  redeemed
+  expired
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id             String   @id @default(uuid())
+  businessName   String   @map("business_name")
+  slug           String   @unique
+  description    String?
+  logoUrl        String?  @map("logo_url")
+  bannerUrl      String?  @map("banner_url")
+  locationMapUrl String?  @map("location_map_url")
+  socialLinks    Json?    @map("social_links")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  members        Member[]
+  admins         Admin[]
+  menuCategories MenuCategory[]
+  menuItems      MenuItem[]
+  vouchers       Voucher[]
+  rewards        Reward[]
+  settings       TenantSettings?
+  orders         Order[]
+  reviewClicks   ReviewClick[]
+
+  @@map("tenants")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("admins")
+}
+
+model TenantSettings {
+  id                  String   @id @default(uuid())
+  tenantId            String   @unique @map("tenant_id")
+  pointsPerAmount     Int      @default(1) @map("points_per_amount")
+  amountPerPoint      Int      @default(10000) @map("amount_per_point")
+  pointExpiryDays     Int      @default(90) @map("point_expiry_days")
+  googlePlaceUrl      String?  @map("google_place_url")
+  reviewRewardType    String?  @map("review_reward_type")
+  reviewRewardValue   Int?     @map("review_reward_value")
+  welcomeVoucherType  String?  @map("welcome_voucher_type")
+  welcomeVoucherValue Int?     @map("welcome_voucher_value")
+  welcomeVoucherDays  Int?     @map("welcome_voucher_days")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_settings")
+}
+
+model Member {
+  id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
+  name         String
+  whatsapp     String
+  pointBalance Int       @default(0) @map("point_balance")
+  totalVisits  Int       @default(0) @map("total_visits")
+  registeredAt DateTime  @default(now()) @map("registered_at")
+  lastVisitAt  DateTime? @map("last_visit_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  orders            Order[]
+  visits            Visit[]
+  pointTransactions PointTransaction[]
+  reviewClicks      ReviewClick[]
+  voucherUsages     VoucherUsage[]
+  issuedVouchers    Voucher[]          @relation("IssuedVouchers")
+
+  @@unique([tenantId, whatsapp])
+  @@index([whatsapp])
+  @@map("members")
+}
+
+model Visit {
+  id           String   @id @default(uuid())
+  memberId     String   @map("member_id")
+  accessMethod String   @map("access_method")
+  visitedAt    DateTime @default(now()) @map("visited_at")
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@map("visits")
+}
+
+model MenuCategory {
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  name      String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id])
+  items  MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          String   @id @default(uuid())
+  categoryId  String   @map("category_id")
+  tenantId    String   @map("tenant_id")
+  name        String
+  description String?
+  price       Int
+  imageUrl    String?  @map("image_url")
+  isAvailable Boolean  @default(true) @map("is_available")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  category   MenuCategory @relation(fields: [categoryId], references: [id])
+  tenant     Tenant       @relation(fields: [tenantId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  memberId       String      @map("member_id")
+  tenantId       String      @map("tenant_id")
+  voucherId      String?     @map("voucher_id")
+  originalTotal  Int         @map("original_total")
+  discountAmount Int         @default(0) @map("discount_amount")
+  finalTotal     Int         @map("final_total")
+  status         OrderStatus @default(pending)
+  paymentBarcode String?     @map("payment_barcode")
+  pointsEarned   Int         @default(0) @map("points_earned")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  validatedAt    DateTime?   @map("validated_at")
+  expiredAt      DateTime?   @map("expired_at")
+
+  member            Member             @relation(fields: [memberId], references: [id])
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  voucher           Voucher?           @relation(fields: [voucherId], references: [id])
+  items             OrderItem[]
+  voucherUsages     VoucherUsage[]
+  pointTransactions PointTransaction[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(uuid())
+  orderId    String @map("order_id")
+  menuItemId String @map("menu_item_id")
+  itemName   String @map("item_name")
+  itemPrice  Int    @map("item_price")
+  quantity   Int
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model Voucher {
+  id               String       @id @default(uuid())
+  tenantId         String       @map("tenant_id")
+  code             String       @unique
+  discountType     DiscountType @map("discount_type")
+  discountValue    Int          @map("discount_value")
+  expiryDate       DateTime     @map("expiry_date") @db.Date
+  maxUsage         Int          @map("max_usage")
+  currentUsage     Int          @default(0) @map("current_usage")
+  isActive         Boolean      @default(true) @map("is_active")
+  isWelcomeVoucher Boolean      @default(false) @map("is_welcome_voucher")
+  issuedToMemberId String?      @map("issued_to_member_id")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  issuedToMember Member?        @relation("IssuedVouchers", fields: [issuedToMemberId], references: [id])
+  orders         Order[]
+  voucherUsages  VoucherUsage[]
+
+  @@index([code])
+  @@map("vouchers")
+}
+
+model VoucherUsage {
+  id        String   @id @default(uuid())
+  voucherId String   @map("voucher_id")
+  memberId  String   @map("member_id")
+  orderId   String   @map("order_id")
+  usedAt    DateTime @default(now()) @map("used_at")
+
+  voucher Voucher @relation(fields: [voucherId], references: [id])
+  member  Member  @relation(fields: [memberId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  @@map("voucher_usages")
+}
+
+model Reward {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  name           String
+  description    String?
+  requiredPoints Int      @map("required_points")
+  stockQuantity  Int      @map("stock_quantity")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  pointTransactions PointTransaction[]
+
+  @@map("rewards")
+}
+
+model PointTransaction {
+  id               String               @id @default(uuid())
+  memberId         String               @map("member_id")
+  type             PointTransactionType
+  amount           Int
+  orderId          String?              @map("order_id")
+  rewardId         String?              @map("reward_id")
+  resultingBalance Int                  @map("resulting_balance")
+  createdAt        DateTime             @default(now()) @map("created_at")
+
+  member Member  @relation(fields: [memberId], references: [id])
+  order  Order?  @relation(fields: [orderId], references: [id])
+  reward Reward? @relation(fields: [rewardId], references: [id])
+
+  @@map("point_transactions")
+}
+
+model ReviewClick {
+  id            String   @id @default(uuid())
+  memberId      String   @map("member_id")
+  tenantId      String   @map("tenant_id")
+  rewardGranted Boolean  @default(false) @map("reward_granted")
+  clickedAt     DateTime @default(now()) @map("clicked_at")
+
+  member Member @relation(fields: [memberId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("review_clicks")
+}
