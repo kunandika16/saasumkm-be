@@ -17,6 +17,6 @@ jobs:
           host: 43.133.34.210
           username: ubuntu
           key: ${{ secrets.DEPLOY_KEY_SAASUMKM }}
-          fingerprint: 
+          fingerprint: SHA256:++inyJG2TaDfOT5qqCMhFb/WcjnGZC5QE8Llj3Rbsgw
           script: |
             bash /home/ubuntu/deploy-saasumkm.sh
