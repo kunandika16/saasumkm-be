@@ -1,0 +1,21 @@
+name: Deploy to Dev Server
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.133.34.210
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_KEY_SAASUMKM }}
+          script: |
+            bash /home/ubuntu/deploy-saasumkm.sh
