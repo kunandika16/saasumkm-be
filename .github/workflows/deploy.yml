@@ -8,15 +8,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: 43.133.34.210
-          username: ubuntu
-          key: ${{ secrets.DEPLOY_KEY_SAASUMKM }}
-          fingerprint: SHA256:++inyJG2TaDfOT5qqCMhFb/WcjnGZC5QE8Llj3Rbsgw
-          script: |
-            bash /home/ubuntu/deploy-saasumkm.sh
+          ssh-private-key: ${{ secrets.DEPLOY_KEY_SAASUMKM }}
+
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan 43.133.34.210 >> ~/.ssh/known_hosts
+
+      - name: Run deploy
+        run: |
+          ssh ubuntu@43.133.34.210 "bash /home/ubuntu/deploy-saasumkm.sh"
