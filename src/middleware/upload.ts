@@ -1,5 +1,3 @@
-import path from 'path';
-import { randomUUID } from 'crypto';
 import multer, { FileFilterCallback } from 'multer';
 import { Request } from 'express';
 import { env } from '../config/env';
@@ -14,21 +12,6 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
  * Max file size in bytes (2MB).
  */
 const MAX_FILE_SIZE = parseInt(env.MAX_FILE_SIZE, 10) || 2097152;
-
-/**
- * Multer disk storage configuration.
- * Files are saved to the configured upload directory with unique names.
- */
-const storage = multer.diskStorage({
-  destination(_req: Request, _file: Express.Multer.File, cb) {
-    cb(null, env.UPLOAD_DIR);
-  },
-  filename(_req: Request, file: Express.Multer.File, cb) {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueName = `${Date.now()}-${randomUUID()}${ext}`;
-    cb(null, uniqueName);
-  },
-});
 
 /**
  * File filter to only allow specific image MIME types.
@@ -51,12 +34,12 @@ function fileFilter(
 
 /**
  * Configured multer instance for single image uploads.
+ * Uses memory storage — file buffer is uploaded to Cloudflare R2.
  * - Max file size: 2MB
  * - Allowed types: image/jpeg, image/png, image/webp
- * - Storage: disk storage in uploads/ directory
  */
 export const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: MAX_FILE_SIZE,
   },

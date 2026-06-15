@@ -2,38 +2,69 @@
   "openapi": "3.0.3",
   "info": {
     "title": "NFC Loyalty & Customer Growth Platform API",
-    "description": "REST API untuk platform loyalty berbasis NFC/QR untuk UMKM Indonesia. Menyediakan fitur registrasi member, pemesanan, validasi pembayaran manual, poin loyalitas, voucher, dan dashboard analytics.",
+    "description": "REST API untuk platform loyalty berbasis NFC/QR untuk UMKM Indonesia. Menyediakan fitur registrasi member, pemesanan, validasi pembayaran manual, poin loyalitas, voucher, dan dashboard analytics.\n\n## Authentication\n\nAPI ini menggunakan 2 jenis token JWT:\n- **Member Token** — Didapat dari `POST /api/auth/register` atau `POST /api/auth/login`\n- **Admin Token** — Didapat dari `POST /api/auth/admin/login`\n\nGunakan tombol **Authorize** di atas untuk memasukkan token. Token berlaku 15 menit, gunakan refresh endpoint untuk memperpanjang.",
     "version": "1.0.0",
     "contact": { "name": "NFC Loyalty Platform" }
   },
   "servers": [
-    { "url": "http://localhost:3000", "description": "Development server" }
+    { "url": "https://dev.sentuhpro.com", "description": "Development server" }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Authentication",
+      "tags": ["🔓 Auth - Member", "🔓 Auth - Admin"]
+    },
+    {
+      "name": "Member Features",
+      "tags": ["👤 Member", "🛒 Ordering", "🎫 Vouchers - Member", "🎁 Rewards & Points - Member", "⭐ Reviews - Member"]
+    },
+    {
+      "name": "Admin Panel",
+      "tags": ["📊 Admin - Analytics", "📋 Admin - Orders", "🏷️ Admin - Vouchers", "🎁 Admin - Rewards", "🍽️ Admin - Menu", "👥 Admin - Members", "⚙️ Admin - Settings", "📤 Admin - Upload"]
+    },
+    {
+      "name": "System",
+      "tags": ["💓 Health"]
+    }
   ],
   "tags": [
-    { "name": "Health", "description": "Server health check" },
-    { "name": "Auth", "description": "Authentication (register, login, refresh)" },
-    { "name": "Members", "description": "Member profile management" },
-    { "name": "Visits", "description": "Visit/access event recording" },
-    { "name": "Menu", "description": "Menu categories & items (public + admin)" },
-    { "name": "Orders", "description": "Order checkout & management" },
-    { "name": "Vouchers", "description": "Voucher validation & management" },
-    { "name": "Rewards & Points", "description": "Loyalty rewards and point history" },
-    { "name": "Reviews", "description": "Google Review Booster" },
-    { "name": "Analytics", "description": "Admin analytics dashboard" },
-    { "name": "Settings", "description": "Tenant settings management" },
-    { "name": "Upload", "description": "File upload" }
+    { "name": "🔓 Auth - Member", "description": "Autentikasi member: register, login, refresh token" },
+    { "name": "🔓 Auth - Admin", "description": "Autentikasi admin: login, refresh token" },
+    { "name": "👤 Member", "description": "Profil member dan pencatatan kunjungan" },
+    { "name": "🛒 Ordering", "description": "Browsing menu (public), checkout pesanan, riwayat order" },
+    { "name": "🎫 Vouchers - Member", "description": "Validasi kode voucher dari sisi member" },
+    { "name": "🎁 Rewards & Points - Member", "description": "Redeem reward, lihat riwayat poin" },
+    { "name": "⭐ Reviews - Member", "description": "Google Review Booster — klik link review" },
+    { "name": "📊 Admin - Analytics", "description": "Dashboard analytics: overview, daily visitors, dormant members, menu popularity" },
+    { "name": "📋 Admin - Orders", "description": "Kelola pesanan: list order, validasi pembayaran" },
+    { "name": "🏷️ Admin - Vouchers", "description": "Kelola voucher: buat, list, deaktivasi" },
+    { "name": "🎁 Admin - Rewards", "description": "Kelola reward: buat, update" },
+    { "name": "🍽️ Admin - Menu", "description": "Kelola menu: kategori dan item (CRUD)" },
+    { "name": "👥 Admin - Members", "description": "Lihat daftar member terdaftar" },
+    { "name": "⚙️ Admin - Settings", "description": "Pengaturan tenant: poin, voucher welcome, Google Review" },
+    { "name": "📤 Admin - Upload", "description": "Upload file gambar untuk menu" },
+    { "name": "💓 Health", "description": "Health check endpoint untuk monitoring server" }
   ],
   "paths": {
     "/api/health": {
       "get": {
-        "tags": ["Health"],
+        "tags": ["💓 Health"],
         "summary": "Health check",
+        "description": "Cek apakah server berjalan normal. Tidak memerlukan autentikasi.",
         "operationId": "healthCheck",
         "responses": {
           "200": {
             "description": "Server is healthy",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "environment": { "type": "string" }
+                  }
+                },
                 "example": {
                   "status": "ok",
                   "timestamp": "2025-07-15T10:30:00.000Z",
@@ -47,9 +78,9 @@
     },
     "/api/auth/register": {
       "post": {
-        "tags": ["Auth"],
-        "summary": "Register new member",
-        "description": "Register a new member. If WhatsApp already exists, performs auto-login. Issues welcome voucher if configured.",
+        "tags": ["🔓 Auth - Member"],
+        "summary": "Register member baru",
+        "description": "Registrasi member baru. Jika nomor WhatsApp sudah terdaftar, otomatis login. Mengeluarkan welcome voucher jika dikonfigurasi di settings.",
         "operationId": "registerMember",
         "requestBody": {
           "required": true,
@@ -57,7 +88,7 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/RegisterRequest" },
               "example": {
-                "name": "John Doe",
+                "name": "Budi Santoso",
                 "whatsapp": "081234567890",
                 "tenantId": "550e8400-e29b-41d4-a716-446655440000",
                 "accessMethod": "nfc"
@@ -67,9 +98,10 @@
         },
         "responses": {
           "201": {
-            "description": "Registration successful",
+            "description": "Registrasi berhasil",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -88,9 +120,10 @@
             }
           },
           "200": {
-            "description": "Member already exists - auto login",
+            "description": "Member sudah terdaftar — auto login",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -106,6 +139,7 @@
             "description": "Validation error",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
                   "success": false,
                   "error": {
@@ -124,8 +158,9 @@
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["Auth"],
-        "summary": "Member login by WhatsApp",
+        "tags": ["🔓 Auth - Member"],
+        "summary": "Login member via WhatsApp",
+        "description": "Login menggunakan nomor WhatsApp terdaftar. Mengembalikan access token dan refresh token.",
         "operationId": "loginMember",
         "requestBody": {
           "required": true,
@@ -141,9 +176,10 @@
         },
         "responses": {
           "200": {
-            "description": "Login successful",
+            "description": "Login berhasil",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -156,9 +192,10 @@
             }
           },
           "404": {
-            "description": "WhatsApp number not registered",
+            "description": "Nomor WhatsApp belum terdaftar",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
                   "success": false,
                   "error": { "message": "Nomor WhatsApp belum terdaftar", "code": "MEMBER_NOT_FOUND" }
@@ -171,8 +208,9 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": ["Auth"],
+        "tags": ["🔓 Auth - Member", "🔓 Auth - Admin"],
         "summary": "Refresh access token",
+        "description": "Tukar refresh token dengan access token baru. Berlaku untuk member maupun admin token.",
         "operationId": "refreshToken",
         "requestBody": {
           "required": true,
@@ -182,7 +220,7 @@
                 "type": "object",
                 "required": ["refreshToken"],
                 "properties": {
-                  "refreshToken": { "type": "string" }
+                  "refreshToken": { "type": "string", "description": "Refresh token yang didapat saat login/register" }
                 }
               },
               "example": {
@@ -193,9 +231,10 @@
         },
         "responses": {
           "200": {
-            "description": "Token refreshed",
+            "description": "Token berhasil di-refresh",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -207,9 +246,10 @@
             }
           },
           "401": {
-            "description": "Invalid or expired refresh token",
+            "description": "Refresh token tidak valid atau expired",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
                   "success": false,
                   "error": { "message": "Invalid or expired refresh token" }
@@ -222,8 +262,9 @@
     },
     "/api/auth/admin/login": {
       "post": {
-        "tags": ["Auth"],
+        "tags": ["🔓 Auth - Admin"],
         "summary": "Admin login",
+        "description": "Login admin menggunakan email dan password. Mengembalikan admin access token.",
         "operationId": "adminLogin",
         "requestBody": {
           "required": true,
@@ -239,9 +280,10 @@
         },
         "responses": {
           "200": {
-            "description": "Admin login successful",
+            "description": "Admin login berhasil",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -254,9 +296,10 @@
             }
           },
           "401": {
-            "description": "Invalid credentials",
+            "description": "Email atau password salah",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
                   "success": false,
                   "error": { "message": "Email atau password salah" }
@@ -269,21 +312,23 @@
     },
     "/api/members/me": {
       "get": {
-        "tags": ["Members"],
-        "summary": "Get current member profile",
+        "tags": ["👤 Member"],
+        "summary": "Get profil member",
+        "description": "Mengambil data profil member yang sedang login.",
         "operationId": "getMemberProfile",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "responses": {
           "200": {
-            "description": "Member profile",
+            "description": "Profil member",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
                     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                     "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-                    "name": "John Doe",
+                    "name": "Budi Santoso",
                     "whatsapp": "081234567890",
                     "pointBalance": 150,
                     "totalVisits": 12,
@@ -295,20 +340,25 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Token tidak valid",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Member access required" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
               }
             }
           }
         }
       },
       "patch": {
-        "tags": ["Members"],
-        "summary": "Update member name",
+        "tags": ["👤 Member"],
+        "summary": "Update nama member",
+        "description": "Member bisa mengubah nama profil mereka.",
         "operationId": "updateMemberProfile",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -317,7 +367,7 @@
                 "type": "object",
                 "required": ["name"],
                 "properties": {
-                  "name": { "type": "string", "minLength": 2, "maxLength": 50 }
+                  "name": { "type": "string", "minLength": 2, "maxLength": 50, "description": "Nama baru member" }
                 }
               },
               "example": { "name": "Budi Santoso" }
@@ -326,9 +376,10 @@
         },
         "responses": {
           "200": {
-            "description": "Profile updated",
+            "description": "Profil berhasil diupdate",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -349,44 +400,10 @@
             "description": "Validation error",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Nama minimal 2 karakter" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/members": {
-      "get": {
-        "tags": ["Members"],
-        "summary": "List all members (admin)",
-        "operationId": "listMembers",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated member list",
-            "content": {
-              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": {
-                    "members": [
-                      {
-                        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                        "name": "John Doe",
-                        "whatsapp": "081234567890",
-                        "pointBalance": 150,
-                        "totalVisits": 12,
-                        "registeredAt": "2025-01-15T08:30:00.000Z",
-                        "lastVisitAt": "2025-07-14T14:20:00.000Z"
-                      }
-                    ],
-                    "pagination": { "page": 1, "pageSize": 20, "totalItems": 45, "totalPages": 3 }
-                  }
+                  "success": false,
+                  "error": { "message": "Nama minimal 2 karakter" }
                 }
               }
             }
@@ -396,10 +413,11 @@
     },
     "/api/visits": {
       "post": {
-        "tags": ["Visits"],
-        "summary": "Record a visit event",
+        "tags": ["👤 Member"],
+        "summary": "Catat kunjungan",
+        "description": "Mencatat event kunjungan member ke toko via NFC/QR/direct.",
         "operationId": "recordVisit",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -407,7 +425,9 @@
               "schema": {
                 "type": "object",
                 "required": ["accessMethod"],
-                "properties": { "accessMethod": { "type": "string", "enum": ["nfc", "qr", "direct"] } }
+                "properties": {
+                  "accessMethod": { "type": "string", "enum": ["nfc", "qr", "direct"], "description": "Metode akses kunjungan" }
+                }
               },
               "example": { "accessMethod": "nfc" }
             }
@@ -415,9 +435,10 @@
         },
         "responses": {
           "201": {
-            "description": "Visit recorded",
+            "description": "Kunjungan tercatat",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -429,23 +450,43 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/menu/categories": {
       "get": {
-        "tags": ["Menu"],
-        "summary": "Get all menu categories with items (public)",
+        "tags": ["🛒 Ordering"],
+        "summary": "Get menu categories & items (public)",
+        "description": "Mengambil semua kategori menu beserta item-nya. Endpoint ini public, tidak perlu token.",
         "operationId": "getMenuCategories",
         "parameters": [
-          { "name": "tenantId", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "name": "tenantId",
+            "in": "query",
+            "required": true,
+            "description": "UUID tenant untuk mengambil menu",
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
-            "description": "List of categories with menu items",
+            "description": "Daftar kategori beserta item menu",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": [
@@ -499,168 +540,16 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/admin/menu/categories": {
-      "post": {
-        "tags": ["Menu"],
-        "summary": "Create menu category (admin)",
-        "operationId": "createMenuCategory",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCategoryRequest" },
-              "example": { "name": "Makanan", "sortOrder": 1 }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Category created",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "id": "d4e5f6a7-b8c9-0123-defg-456789012345",
-                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-                    "name": "Makanan",
-                    "sortOrder": 1
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/menu/items": {
-      "post": {
-        "tags": ["Menu"],
-        "summary": "Create menu item (admin)",
-        "operationId": "createMenuItem",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateMenuItemRequest" },
-              "example": {
-                "name": "Nasi Goreng Spesial",
-                "description": "Nasi goreng dengan telur, ayam, dan sayuran",
-                "price": 25000,
-                "categoryId": "d4e5f6a7-b8c9-0123-defg-456789012345",
-                "imageUrl": "https://example.com/nasi-goreng.jpg",
-                "isAvailable": true
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Menu item created",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "id": "e5f6a7b8-c9d0-1234-efgh-567890123456",
-                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-                    "categoryId": "d4e5f6a7-b8c9-0123-defg-456789012345",
-                    "name": "Nasi Goreng Spesial",
-                    "description": "Nasi goreng dengan telur, ayam, dan sayuran",
-                    "price": 25000,
-                    "imageUrl": "https://example.com/nasi-goreng.jpg",
-                    "isAvailable": true,
-                    "sortOrder": 0,
-                    "createdAt": "2025-07-15T10:30:00.000Z"
-                  }
-                }
-              }
-            }
           },
-          "404": {
-            "description": "Category not found",
+          "400": {
+            "description": "tenantId tidak valid",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Kategori tidak ditemukan" } }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/menu/items/{id}": {
-      "patch": {
-        "tags": ["Menu"],
-        "summary": "Update menu item (admin)",
-        "operationId": "updateMenuItem",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateMenuItemRequest" },
-              "example": { "name": "Nasi Goreng Super", "price": 28000, "isAvailable": false }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Menu item updated",
-            "content": {
-              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": {
-                    "id": "e5f6a7b8-c9d0-1234-efgh-567890123456",
-                    "name": "Nasi Goreng Super",
-                    "price": 28000,
-                    "isAvailable": false
-                  }
+                  "success": false,
+                  "error": { "message": "tenantId is required and must be a valid UUID" }
                 }
-              }
-            }
-          },
-          "404": {
-            "description": "Menu item not found",
-            "content": {
-              "application/json": {
-                "example": { "success": false, "error": { "message": "Menu item tidak ditemukan" } }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": ["Menu"],
-        "summary": "Delete menu item (admin)",
-        "operationId": "deleteMenuItem",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Menu item deleted",
-            "content": {
-              "application/json": {
-                "example": { "success": true, "data": { "message": "Menu item berhasil dihapus" } }
-              }
-            }
-          },
-          "404": {
-            "description": "Menu item not found",
-            "content": {
-              "application/json": {
-                "example": { "success": false, "error": { "message": "Menu item tidak ditemukan" } }
               }
             }
           }
@@ -669,11 +558,11 @@
     },
     "/api/orders/checkout": {
       "post": {
-        "tags": ["Orders"],
-        "summary": "Checkout order (member)",
-        "description": "Create new order from cart items. Optionally apply voucher code.",
+        "tags": ["🛒 Ordering"],
+        "summary": "Checkout order",
+        "description": "Buat pesanan baru dari item yang dipilih. Opsional bisa pakai kode voucher untuk diskon.",
         "operationId": "checkoutOrder",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -691,9 +580,10 @@
         },
         "responses": {
           "201": {
-            "description": "Order created",
+            "description": "Order berhasil dibuat",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -709,10 +599,26 @@
             }
           },
           "400": {
-            "description": "Validation error or invalid voucher",
+            "description": "Validation error atau voucher tidak valid",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Voucher sudah expired" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Voucher sudah expired" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
               }
             }
           }
@@ -721,19 +627,21 @@
     },
     "/api/orders": {
       "get": {
-        "tags": ["Orders"],
-        "summary": "Get order history (member)",
+        "tags": ["🛒 Ordering"],
+        "summary": "Riwayat order member",
+        "description": "Mengambil riwayat pesanan member yang sedang login, dengan paginasi.",
         "operationId": "getMemberOrders",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
+          { "name": "page", "in": "query", "description": "Nomor halaman", "schema": { "type": "integer", "default": 1, "minimum": 1 } },
+          { "name": "pageSize", "in": "query", "description": "Jumlah item per halaman", "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 } }
         ],
         "responses": {
           "200": {
-            "description": "Paginated order history",
+            "description": "Riwayat pesanan dengan paginasi",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -759,99 +667,16 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/admin/orders": {
-      "get": {
-        "tags": ["Orders"],
-        "summary": "List orders (admin)",
-        "description": "Filterable by status. Pending sorted oldest first, others newest first.",
-        "operationId": "listAdminOrders",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "paid", "cancelled", "expired"] } },
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated order list",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "orders": [
-                      {
-                        "id": "f7a8b9c0-d1e2-3456-ghij-789012345678",
-                        "originalTotal": 70000,
-                        "discountAmount": 7000,
-                        "finalTotal": 63000,
-                        "status": "pending",
-                        "paymentBarcode": "ORD-f7a8b9c0-63000",
-                        "createdAt": "2025-07-14T12:00:00.000Z",
-                        "member": { "id": "a1b2c3d4", "name": "John Doe", "whatsapp": "081234567890" },
-                        "items": [
-                          { "itemName": "Nasi Goreng Spesial", "itemPrice": 25000, "quantity": 2 }
-                        ],
-                        "voucher": { "code": "DISKON10", "discountType": "percentage", "discountValue": 10 }
-                      }
-                    ],
-                    "pagination": { "page": 1, "pageSize": 50, "total": 3, "totalPages": 1 }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/orders/{orderId}/validate": {
-      "post": {
-        "tags": ["Orders"],
-        "summary": "Validate payment (admin confirm/reject)",
-        "operationId": "validatePayment",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "orderId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["action"],
-                "properties": { "action": { "type": "string", "enum": ["confirm", "reject"] } }
-              },
-              "example": { "action": "confirm" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment validated",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "orderId": "f7a8b9c0-d1e2-3456-ghij-789012345678",
-                    "status": "paid",
-                    "pointsAwarded": 6,
-                    "notificationSent": true
-                  }
-                }
-              }
-            }
           },
-          "400": {
-            "description": "Order already in terminal state",
+          "401": {
+            "description": "Token tidak valid",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Order sudah dalam status paid, tidak bisa diubah" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
               }
             }
           }
@@ -860,10 +685,11 @@
     },
     "/api/vouchers/validate": {
       "post": {
-        "tags": ["Vouchers"],
-        "summary": "Validate voucher code (member)",
+        "tags": ["🎫 Vouchers - Member"],
+        "summary": "Validasi kode voucher",
+        "description": "Cek apakah kode voucher valid, belum expired, dan masih bisa dipakai.",
         "operationId": "validateVoucher",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "memberAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -871,7 +697,9 @@
               "schema": {
                 "type": "object",
                 "required": ["code"],
-                "properties": { "code": { "type": "string", "maxLength": 20 } }
+                "properties": {
+                  "code": { "type": "string", "maxLength": 20, "description": "Kode voucher yang mau dicek" }
+                }
               },
               "example": { "code": "DISKON10" }
             }
@@ -879,9 +707,10 @@
         },
         "responses": {
           "200": {
-            "description": "Voucher is valid",
+            "description": "Voucher valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -895,13 +724,623 @@
             }
           },
           "400": {
-            "description": "Invalid voucher",
+            "description": "Voucher tidak valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "examples": {
-                  "invalid": { "summary": "Code not found", "value": { "success": false, "error": { "message": "Kode voucher tidak valid", "code": "INVALID_CODE" } } },
-                  "expired": { "summary": "Voucher expired", "value": { "success": false, "error": { "message": "Voucher sudah expired", "code": "EXPIRED" } } },
-                  "maxed": { "summary": "Usage limit reached", "value": { "success": false, "error": { "message": "Voucher sudah mencapai batas penggunaan", "code": "USAGE_LIMIT_REACHED" } } }
+                  "invalid": {
+                    "summary": "Kode tidak ditemukan",
+                    "value": { "success": false, "error": { "message": "Kode voucher tidak valid", "code": "INVALID_CODE" } }
+                  },
+                  "expired": {
+                    "summary": "Voucher expired",
+                    "value": { "success": false, "error": { "message": "Voucher sudah expired", "code": "EXPIRED" } }
+                  },
+                  "maxed": {
+                    "summary": "Batas penggunaan tercapai",
+                    "value": { "success": false, "error": { "message": "Voucher sudah mencapai batas penggunaan", "code": "USAGE_LIMIT_REACHED" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewards": {
+      "get": {
+        "tags": ["🎁 Rewards & Points - Member"],
+        "summary": "List reward yang bisa di-redeem",
+        "description": "Menampilkan daftar reward aktif yang tersedia untuk member.",
+        "operationId": "getRedeemableRewards",
+        "security": [{ "memberAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar reward",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "rewards": [
+                      {
+                        "id": "r-001",
+                        "name": "Free Coffee",
+                        "description": "Gratis 1 kopi espresso",
+                        "requiredPoints": 50,
+                        "stockQuantity": 20,
+                        "isActive": true
+                      },
+                      {
+                        "id": "r-002",
+                        "name": "Discount 50%",
+                        "description": "Potongan 50% untuk 1 menu",
+                        "requiredPoints": 100,
+                        "stockQuantity": 5,
+                        "isActive": true
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewards/{id}/redeem": {
+      "post": {
+        "tags": ["🎁 Rewards & Points - Member"],
+        "summary": "Redeem reward",
+        "description": "Tukar poin member dengan reward. Poin akan dikurangi sesuai harga reward.",
+        "operationId": "redeemReward",
+        "security": [{ "memberAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "description": "ID reward yang mau di-redeem", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reward berhasil di-redeem",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "rewardName": "Free Coffee",
+                    "pointsDeducted": 50,
+                    "remainingBalance": 100
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Tidak bisa redeem",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "insufficient": {
+                    "summary": "Poin tidak cukup",
+                    "value": { "success": false, "error": { "message": "Poin tidak cukup. Dibutuhkan: 50, saldo: 30" } }
+                  },
+                  "inactive": {
+                    "summary": "Reward tidak tersedia",
+                    "value": { "success": false, "error": { "message": "Reward tidak tersedia" } }
+                  },
+                  "outOfStock": {
+                    "summary": "Stok habis",
+                    "value": { "success": false, "error": { "message": "Stok reward sudah habis" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/members/me/points": {
+      "get": {
+        "tags": ["🎁 Rewards & Points - Member"],
+        "summary": "Riwayat transaksi poin",
+        "description": "Mengambil riwayat transaksi poin member (earned dan redeemed).",
+        "operationId": "getPointHistory",
+        "security": [{ "memberAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "description": "Nomor halaman", "schema": { "type": "integer", "default": 1, "minimum": 1 } },
+          { "name": "pageSize", "in": "query", "description": "Jumlah item per halaman", "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Riwayat transaksi poin",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "transactions": [
+                      {
+                        "id": "pt-001",
+                        "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "type": "earned",
+                        "amount": 6,
+                        "orderId": "f7a8b9c0-d1e2-3456-ghij-789012345678",
+                        "rewardId": null,
+                        "resultingBalance": 156,
+                        "createdAt": "2025-07-14T12:15:00.000Z"
+                      },
+                      {
+                        "id": "pt-002",
+                        "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "type": "redeemed",
+                        "amount": 50,
+                        "orderId": null,
+                        "rewardId": "r-001",
+                        "resultingBalance": 150,
+                        "createdAt": "2025-07-13T09:00:00.000Z"
+                      }
+                    ],
+                    "pagination": { "page": 1, "pageSize": 20, "total": 25, "totalPages": 2 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/click": {
+      "post": {
+        "tags": ["⭐ Reviews - Member"],
+        "summary": "Catat klik Google Review",
+        "description": "Mencatat klik link Google Review. Memberikan reward poin sekali saja (first click).",
+        "operationId": "recordReviewClick",
+        "security": [{ "memberAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Klik tercatat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "examples": {
+                  "firstClick": {
+                    "summary": "Klik pertama — reward diberikan",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "clicked": true,
+                        "rewardGranted": true,
+                        "reward": { "type": "points", "value": 10 }
+                      }
+                    }
+                  },
+                  "subsequentClick": {
+                    "summary": "Klik berulang — tanpa reward",
+                    "value": {
+                      "success": true,
+                      "data": { "clicked": true, "rewardGranted": false }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Google Review belum dikonfigurasi",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Google Review belum dikonfigurasi" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/overview": {
+      "get": {
+        "tags": ["📊 Admin - Analytics"],
+        "summary": "Dashboard overview metrics",
+        "description": "Menampilkan ringkasan metrik dashboard: total member, kunjungan bulan ini, repeat customer, top members, total voucher redeemed, total order & revenue.",
+        "operationId": "getAnalyticsOverview",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Analytics overview",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "totalMembers": 120,
+                    "totalVisitsThisMonth": 340,
+                    "repeatCustomerCount": 45,
+                    "topMembersByVisits": [
+                      { "memberId": "a1b2c3d4", "name": "Budi Santoso", "orderCount": 15 },
+                      { "memberId": "b2c3d4e5", "name": "Siti Rahayu", "orderCount": 12 }
+                    ],
+                    "totalVouchersRedeemedThisMonth": 67,
+                    "totalOrdersThisMonth": 189,
+                    "totalRevenueThisMonth": 12500000
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/daily-visitors": {
+      "get": {
+        "tags": ["📊 Admin - Analytics"],
+        "summary": "Tren pengunjung harian (bulan ini)",
+        "description": "Data jumlah pengunjung unik per hari untuk bulan berjalan.",
+        "operationId": "getDailyVisitors",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Data daily visitors",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": [
+                    { "date": "2025-07-01", "uniqueVisitors": 15 },
+                    { "date": "2025-07-02", "uniqueVisitors": 22 },
+                    { "date": "2025-07-03", "uniqueVisitors": 18 },
+                    { "date": "2025-07-04", "uniqueVisitors": 30 },
+                    { "date": "2025-07-05", "uniqueVisitors": 25 }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/dormant-members": {
+      "get": {
+        "tags": ["📊 Admin - Analytics"],
+        "summary": "Member dormant (30+ hari tidak berkunjung)",
+        "description": "Daftar member yang tidak berkunjung selama 30 hari atau lebih. Maksimal 50 hasil.",
+        "operationId": "getDormantMembers",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar member dormant",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": [
+                    { "id": "m-001", "name": "Andi Wijaya", "whatsapp": "081111111111", "lastVisitAt": "2025-06-01T10:00:00.000Z", "daysSinceLastVisit": 44 },
+                    { "id": "m-002", "name": "Dewi Lestari", "whatsapp": "082222222222", "lastVisitAt": "2025-06-10T08:00:00.000Z", "daysSinceLastVisit": 35 }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/menu-popularity": {
+      "get": {
+        "tags": ["📊 Admin - Analytics"],
+        "summary": "Menu popularity ranking (top 10)",
+        "description": "Ranking 10 menu item paling banyak dipesan.",
+        "operationId": "getMenuPopularity",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Data popularitas menu",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": [
+                    { "menuItemId": "item-001", "name": "Nasi Goreng Spesial", "orderCount": 85 },
+                    { "menuItemId": "item-003", "name": "Es Teh Manis", "orderCount": 72 },
+                    { "menuItemId": "item-002", "name": "Mie Goreng", "orderCount": 54 }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reviews/stats": {
+      "get": {
+        "tags": ["📊 Admin - Analytics"],
+        "summary": "Statistik Google Review Booster",
+        "description": "Statistik klik link Google Review: total clickers, total clicks, conversion rate.",
+        "operationId": "getReviewStats",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Review statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "totalUniqueClickers": 28,
+                    "totalClicks": 45,
+                    "totalMembers": 120,
+                    "conversionRate": 23.33
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/orders": {
+      "get": {
+        "tags": ["📋 Admin - Orders"],
+        "summary": "List semua order",
+        "description": "Daftar order yang bisa difilter berdasarkan status. Order pending diurutkan paling lama dulu, lainnya terbaru dulu.",
+        "operationId": "listAdminOrders",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "description": "Filter berdasarkan status order", "schema": { "type": "string", "enum": ["pending", "paid", "cancelled", "expired"] } },
+          { "name": "page", "in": "query", "description": "Nomor halaman", "schema": { "type": "integer", "default": 1, "minimum": 1 } },
+          { "name": "pageSize", "in": "query", "description": "Jumlah item per halaman", "schema": { "type": "integer", "default": 50, "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar order dengan paginasi",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "orders": [
+                      {
+                        "id": "f7a8b9c0-d1e2-3456-ghij-789012345678",
+                        "originalTotal": 70000,
+                        "discountAmount": 7000,
+                        "finalTotal": 63000,
+                        "status": "pending",
+                        "paymentBarcode": "ORD-f7a8b9c0-63000",
+                        "createdAt": "2025-07-14T12:00:00.000Z",
+                        "member": { "id": "a1b2c3d4", "name": "Budi Santoso", "whatsapp": "081234567890" },
+                        "items": [
+                          { "itemName": "Nasi Goreng Spesial", "itemPrice": 25000, "quantity": 2 }
+                        ],
+                        "voucher": { "code": "DISKON10", "discountType": "percentage", "discountValue": 10 }
+                      }
+                    ],
+                    "pagination": { "page": 1, "pageSize": 50, "total": 3, "totalPages": 1 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/orders/{orderId}/validate": {
+      "post": {
+        "tags": ["📋 Admin - Orders"],
+        "summary": "Validasi pembayaran (confirm/reject)",
+        "description": "Admin mengkonfirmasi atau menolak pembayaran order. Jika confirm, poin diberikan ke member dan notifikasi WA dikirim.",
+        "operationId": "validatePayment",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "name": "orderId", "in": "path", "required": true, "description": "ID order yang mau divalidasi", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["confirm", "reject"], "description": "Aksi validasi: confirm atau reject" }
+                }
+              },
+              "example": { "action": "confirm" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pembayaran berhasil divalidasi",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "orderId": "f7a8b9c0-d1e2-3456-ghij-789012345678",
+                    "status": "paid",
+                    "pointsAwarded": 6,
+                    "notificationSent": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Order sudah dalam status terminal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Order sudah dalam status paid, tidak bisa diubah" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Order tidak ditemukan" }
                 }
               }
             }
@@ -910,70 +1349,18 @@
       }
     },
     "/api/admin/vouchers": {
-      "post": {
-        "tags": ["Vouchers"],
-        "summary": "Create voucher (admin)",
-        "operationId": "createVoucher",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateVoucherRequest" },
-              "example": {
-                "code": "PROMO20",
-                "discountType": "percentage",
-                "discountValue": 20,
-                "expiryDate": "2025-12-31T23:59:59.000Z",
-                "maxUsage": 100
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Voucher created",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "id": "v-001",
-                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-                    "code": "PROMO20",
-                    "discountType": "percentage",
-                    "discountValue": 20,
-                    "expiryDate": "2025-12-31T23:59:59.000Z",
-                    "maxUsage": 100,
-                    "currentUsage": 0,
-                    "isActive": true,
-                    "isWelcomeVoucher": false,
-                    "createdAt": "2025-07-15T10:30:00.000Z"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Duplicate code or validation error",
-            "content": {
-              "application/json": {
-                "example": { "success": false, "error": { "message": "Kode voucher sudah digunakan" } }
-              }
-            }
-          }
-        }
-      },
       "get": {
-        "tags": ["Vouchers"],
-        "summary": "List vouchers with stats (admin)",
+        "tags": ["🏷️ Admin - Vouchers"],
+        "summary": "List semua voucher",
+        "description": "Daftar semua voucher dengan statistik penggunaan (remaining uses, redemption rate).",
         "operationId": "listVouchers",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "responses": {
           "200": {
-            "description": "Voucher list with statistics",
+            "description": "Daftar voucher beserta statistik",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": [
@@ -1005,24 +1392,110 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["🏷️ Admin - Vouchers"],
+        "summary": "Buat voucher baru",
+        "description": "Membuat voucher baru dengan kode unik, tipe diskon, dan batas penggunaan.",
+        "operationId": "createVoucher",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateVoucherRequest" },
+              "example": {
+                "code": "PROMO20",
+                "discountType": "percentage",
+                "discountValue": 20,
+                "expiryDate": "2025-12-31T23:59:59.000Z",
+                "maxUsage": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Voucher berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "v-001",
+                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
+                    "code": "PROMO20",
+                    "discountType": "percentage",
+                    "discountValue": 20,
+                    "expiryDate": "2025-12-31T23:59:59.000Z",
+                    "maxUsage": 100,
+                    "currentUsage": 0,
+                    "isActive": true,
+                    "isWelcomeVoucher": false,
+                    "createdAt": "2025-07-15T10:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error atau kode duplikat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Kode voucher sudah digunakan" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/admin/vouchers/{id}/deactivate": {
       "patch": {
-        "tags": ["Vouchers"],
-        "summary": "Deactivate voucher (admin)",
+        "tags": ["🏷️ Admin - Vouchers"],
+        "summary": "Deaktivasi voucher",
+        "description": "Menonaktifkan voucher sehingga tidak bisa dipakai lagi.",
         "operationId": "deactivateVoucher",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          { "name": "id", "in": "path", "required": true, "description": "ID voucher yang mau dinonaktifkan", "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
           "200": {
-            "description": "Voucher deactivated",
+            "description": "Voucher berhasil dinonaktifkan",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -1033,83 +1506,27 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/rewards": {
-      "get": {
-        "tags": ["Rewards & Points"],
-        "summary": "List redeemable rewards (member)",
-        "description": "Returns rewards that are active and affordable for the member.",
-        "operationId": "getRedeemableRewards",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "List of redeemable rewards",
+          },
+          "401": {
+            "description": "Token admin tidak valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": {
-                    "rewards": [
-                      {
-                        "id": "r-001",
-                        "name": "Free Coffee",
-                        "description": "Gratis 1 kopi espresso",
-                        "requiredPoints": 50,
-                        "stockQuantity": 20,
-                        "isActive": true
-                      },
-                      {
-                        "id": "r-002",
-                        "name": "Discount 50%",
-                        "description": "Potongan 50% untuk 1 menu",
-                        "requiredPoints": 100,
-                        "stockQuantity": 5,
-                        "isActive": true
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/rewards/{id}/redeem": {
-      "post": {
-        "tags": ["Rewards & Points"],
-        "summary": "Redeem a reward (member)",
-        "operationId": "redeemReward",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Reward redeemed successfully",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "rewardName": "Free Coffee",
-                    "pointsDeducted": 50,
-                    "remainingBalance": 100
-                  }
+                  "success": false,
+                  "error": { "message": "Admin access required" }
                 }
               }
             }
           },
-          "400": {
-            "description": "Cannot redeem",
+          "404": {
+            "description": "Voucher tidak ditemukan",
             "content": {
               "application/json": {
-                "examples": {
-                  "insufficient": { "summary": "Not enough points", "value": { "success": false, "error": { "message": "Poin tidak cukup. Dibutuhkan: 50, saldo: 30" } } },
-                  "inactive": { "summary": "Reward unavailable", "value": { "success": false, "error": { "message": "Reward tidak tersedia" } } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Voucher tidak ditemukan" }
                 }
               }
             }
@@ -1119,10 +1536,11 @@
     },
     "/api/admin/rewards": {
       "post": {
-        "tags": ["Rewards & Points"],
-        "summary": "Create reward (admin)",
+        "tags": ["🎁 Admin - Rewards"],
+        "summary": "Buat reward baru",
+        "description": "Membuat reward yang bisa di-redeem oleh member dengan poin.",
         "operationId": "createReward",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1140,9 +1558,10 @@
         },
         "responses": {
           "201": {
-            "description": "Reward created",
+            "description": "Reward berhasil dibuat",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -1160,24 +1579,49 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Validation failed", "details": [{ "field": "requiredPoints", "message": "requiredPoints minimal 1" }] }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/admin/rewards/{id}": {
       "patch": {
-        "tags": ["Rewards & Points"],
-        "summary": "Update reward (admin)",
+        "tags": ["🎁 Admin - Rewards"],
+        "summary": "Update reward",
+        "description": "Mengubah detail reward (nama, poin, stok, status aktif).",
         "operationId": "updateReward",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          { "name": "id", "in": "path", "required": true, "description": "ID reward yang mau diupdate", "schema": { "type": "string", "format": "uuid" } }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateRewardRequest" },
+              "schema": { "$ref": "#/components/schemas/UpdateRewardRequest" },
               "example": {
                 "name": "Free Latte",
                 "requiredPoints": 75,
@@ -1189,15 +1633,17 @@
         },
         "responses": {
           "200": {
-            "description": "Reward updated",
+            "description": "Reward berhasil diupdate",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
                     "reward": {
                       "id": "r-001",
                       "name": "Free Latte",
+                      "description": "Gratis 1 latte",
                       "requiredPoints": 75,
                       "stockQuantity": 10,
                       "isActive": true
@@ -1206,52 +1652,27 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/members/me/points": {
-      "get": {
-        "tags": ["Rewards & Points"],
-        "summary": "Get point transaction history (member)",
-        "operationId": "getPointHistory",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Point transaction history",
+          },
+          "401": {
+            "description": "Token admin tidak valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": {
-                    "transactions": [
-                      {
-                        "id": "pt-001",
-                        "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                        "type": "earned",
-                        "amount": 6,
-                        "orderId": "f7a8b9c0-d1e2-3456-ghij-789012345678",
-                        "rewardId": null,
-                        "resultingBalance": 156,
-                        "createdAt": "2025-07-14T12:15:00.000Z"
-                      },
-                      {
-                        "id": "pt-002",
-                        "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                        "type": "redeemed",
-                        "amount": 50,
-                        "orderId": null,
-                        "rewardId": "r-001",
-                        "resultingBalance": 150,
-                        "createdAt": "2025-07-13T09:00:00.000Z"
-                      }
-                    ],
-                    "pagination": { "page": 1, "pageSize": 20, "total": 25, "totalPages": 2 }
-                  }
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Reward tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Reward tidak ditemukan" }
                 }
               }
             }
@@ -1259,71 +1680,60 @@
         }
       }
     },
-    "/api/reviews/click": {
+    "/api/admin/menu/categories": {
       "post": {
-        "tags": ["Reviews"],
-        "summary": "Record review click (member)",
-        "description": "Records a Google review link click. Grants one-time reward if configured.",
-        "operationId": "recordReviewClick",
-        "security": [{ "bearerAuth": [] }],
+        "tags": ["🍽️ Admin - Menu"],
+        "summary": "Buat kategori menu",
+        "description": "Membuat kategori menu baru (misal: Makanan, Minuman, Snack).",
+        "operationId": "createMenuCategory",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCategoryRequest" },
+              "example": { "name": "Makanan", "sortOrder": 1 }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "Click recorded",
+          "201": {
+            "description": "Kategori berhasil dibuat",
             "content": {
               "application/json": {
-                "examples": {
-                  "firstClick": {
-                    "summary": "First click - reward granted",
-                    "value": {
-                      "success": true,
-                      "data": {
-                        "clicked": true,
-                        "rewardGranted": true,
-                        "reward": { "type": "points", "value": 10 }
-                      }
-                    }
-                  },
-                  "subsequentClick": {
-                    "summary": "Repeat click - no reward",
-                    "value": {
-                      "success": true,
-                      "data": { "clicked": true, "rewardGranted": false }
-                    }
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "d4e5f6a7-b8c9-0123-defg-456789012345",
+                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Makanan",
+                    "sortOrder": 1
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Google Review not configured",
+            "description": "Validation error",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Google Review belum dikonfigurasi" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Nama kategori wajib diisi" }
+                }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/admin/reviews/stats": {
-      "get": {
-        "tags": ["Reviews"],
-        "summary": "Get review booster stats (admin)",
-        "operationId": "getReviewStats",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Review statistics",
+          },
+          "401": {
+            "description": "Token admin tidak valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": {
-                    "totalUniqueClickers": 28,
-                    "totalClicks": 45,
-                    "totalMembers": 120,
-                    "conversionRate": 23.33
-                  }
+                  "success": false,
+                  "error": { "message": "Admin access required" }
                 }
               }
             }
@@ -1331,107 +1741,261 @@
         }
       }
     },
-    "/api/admin/analytics/overview": {
-      "get": {
-        "tags": ["Analytics"],
-        "summary": "Get dashboard overview metrics",
-        "operationId": "getAnalyticsOverview",
-        "security": [{ "bearerAuth": [] }],
+    "/api/admin/menu/items": {
+      "post": {
+        "tags": ["🍽️ Admin - Menu"],
+        "summary": "Buat menu item",
+        "description": "Membuat item menu baru di bawah kategori tertentu.",
+        "operationId": "createMenuItem",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMenuItemRequest" },
+              "example": {
+                "name": "Nasi Goreng Spesial",
+                "description": "Nasi goreng dengan telur, ayam, dan sayuran",
+                "price": 25000,
+                "categoryId": "d4e5f6a7-b8c9-0123-defg-456789012345",
+                "imageUrl": "https://example.com/nasi-goreng.jpg",
+                "isAvailable": true
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "Analytics overview",
+          "201": {
+            "description": "Menu item berhasil dibuat",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
-                    "totalMembers": 120,
-                    "totalVisitsThisMonth": 340,
-                    "repeatCustomerCount": 45,
-                    "topMembersByVisits": [
-                      { "memberId": "a1b2c3d4", "name": "John Doe", "orderCount": 15 },
-                      { "memberId": "b2c3d4e5", "name": "Jane Smith", "orderCount": 12 }
+                    "id": "e5f6a7b8-c9d0-1234-efgh-567890123456",
+                    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
+                    "categoryId": "d4e5f6a7-b8c9-0123-defg-456789012345",
+                    "name": "Nasi Goreng Spesial",
+                    "description": "Nasi goreng dengan telur, ayam, dan sayuran",
+                    "price": 25000,
+                    "imageUrl": "https://example.com/nasi-goreng.jpg",
+                    "isAvailable": true,
+                    "sortOrder": 0,
+                    "createdAt": "2025-07-15T10:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Validation failed", "details": [{ "field": "price", "message": "Harga minimal Rp0" }] }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kategori tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Kategori tidak ditemukan" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/menu/items/{id}": {
+      "patch": {
+        "tags": ["🍽️ Admin - Menu"],
+        "summary": "Update menu item",
+        "description": "Mengubah detail menu item (nama, harga, deskripsi, ketersediaan).",
+        "operationId": "updateMenuItem",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "description": "ID menu item", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateMenuItemRequest" },
+              "example": { "name": "Nasi Goreng Super", "price": 28000, "isAvailable": false }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Menu item berhasil diupdate",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "e5f6a7b8-c9d0-1234-efgh-567890123456",
+                    "name": "Nasi Goreng Super",
+                    "description": "Nasi goreng dengan telur, ayam, dan sayuran",
+                    "price": 28000,
+                    "imageUrl": "https://example.com/nasi-goreng.jpg",
+                    "isAvailable": false,
+                    "sortOrder": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Menu item tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Menu item tidak ditemukan" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["🍽️ Admin - Menu"],
+        "summary": "Hapus menu item",
+        "description": "Menghapus menu item secara permanen.",
+        "operationId": "deleteMenuItem",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "description": "ID menu item yang mau dihapus", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu item berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": { "message": "Menu item berhasil dihapus" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Menu item tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Menu item tidak ditemukan" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/members": {
+      "get": {
+        "tags": ["👥 Admin - Members"],
+        "summary": "List semua member",
+        "description": "Daftar semua member terdaftar dengan paginasi.",
+        "operationId": "listMembers",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "description": "Nomor halaman", "schema": { "type": "integer", "default": 1, "minimum": 1 } },
+          { "name": "pageSize", "in": "query", "description": "Jumlah item per halaman", "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar member dengan paginasi",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "members": [
+                      {
+                        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "name": "Budi Santoso",
+                        "whatsapp": "081234567890",
+                        "pointBalance": 150,
+                        "totalVisits": 12,
+                        "registeredAt": "2025-01-15T08:30:00.000Z",
+                        "lastVisitAt": "2025-07-14T14:20:00.000Z"
+                      },
+                      {
+                        "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                        "name": "Siti Rahayu",
+                        "whatsapp": "082345678901",
+                        "pointBalance": 75,
+                        "totalVisits": 6,
+                        "registeredAt": "2025-03-20T10:00:00.000Z",
+                        "lastVisitAt": "2025-07-10T09:15:00.000Z"
+                      }
                     ],
-                    "totalVouchersRedeemedThisMonth": 67,
-                    "totalOrdersThisMonth": 189,
-                    "totalRevenueThisMonth": 12500000
+                    "pagination": { "page": 1, "pageSize": 20, "totalItems": 45, "totalPages": 3 }
                   }
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/admin/analytics/daily-visitors": {
-      "get": {
-        "tags": ["Analytics"],
-        "summary": "Get daily visitor trend (current month)",
-        "operationId": "getDailyVisitors",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Daily visitor data",
+          },
+          "401": {
+            "description": "Token admin tidak valid",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
-                  "success": true,
-                  "data": [
-                    { "date": "2025-07-01", "uniqueVisitors": 15 },
-                    { "date": "2025-07-02", "uniqueVisitors": 22 },
-                    { "date": "2025-07-03", "uniqueVisitors": 18 },
-                    { "date": "2025-07-04", "uniqueVisitors": 30 },
-                    { "date": "2025-07-05", "uniqueVisitors": 25 }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/analytics/dormant-members": {
-      "get": {
-        "tags": ["Analytics"],
-        "summary": "Get dormant members (no visit in 30 days)",
-        "operationId": "getDormantMembers",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Dormant member list (max 50)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": [
-                    { "id": "m-001", "name": "Andi", "whatsapp": "081111111111", "lastVisitAt": "2025-06-01T10:00:00.000Z", "daysSinceLastVisit": 44 },
-                    { "id": "m-002", "name": "Budi", "whatsapp": "082222222222", "lastVisitAt": "2025-06-10T08:00:00.000Z", "daysSinceLastVisit": 35 }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/analytics/menu-popularity": {
-      "get": {
-        "tags": ["Analytics"],
-        "summary": "Get menu popularity ranking (top 10)",
-        "operationId": "getMenuPopularity",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Menu popularity data",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "data": [
-                    { "menuItemId": "item-001", "name": "Nasi Goreng Spesial", "orderCount": 85 },
-                    { "menuItemId": "item-003", "name": "Es Teh Manis", "orderCount": 72 },
-                    { "menuItemId": "item-002", "name": "Mie Goreng", "orderCount": 54 }
-                  ]
+                  "success": false,
+                  "error": { "message": "Admin access required" }
                 }
               }
             }
@@ -1441,15 +2005,17 @@
     },
     "/api/admin/settings": {
       "get": {
-        "tags": ["Settings"],
-        "summary": "Get tenant settings",
+        "tags": ["⚙️ Admin - Settings"],
+        "summary": "Get pengaturan tenant",
+        "description": "Mengambil semua pengaturan tenant: konfigurasi poin, welcome voucher, Google Review.",
         "operationId": "getSettings",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "responses": {
           "200": {
-            "description": "Tenant settings",
+            "description": "Pengaturan tenant",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -1469,14 +2035,27 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
           }
         }
       },
       "patch": {
-        "tags": ["Settings"],
-        "summary": "Update tenant settings",
+        "tags": ["⚙️ Admin - Settings"],
+        "summary": "Update pengaturan tenant",
+        "description": "Mengubah pengaturan tenant. Semua field opsional — hanya kirim field yang mau diubah.",
         "operationId": "updateSettings",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1498,9 +2077,10 @@
         },
         "responses": {
           "200": {
-            "description": "Settings updated",
+            "description": "Pengaturan berhasil diupdate",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -1525,7 +2105,23 @@
             "description": "Validation error",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "Jumlah per poin minimal Rp1.000" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Jumlah per poin minimal Rp1.000" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
               }
             }
           }
@@ -1534,11 +2130,11 @@
     },
     "/api/upload/image": {
       "post": {
-        "tags": ["Upload"],
-        "summary": "Upload image file",
-        "description": "Max 2MB, accepts JPG/PNG/WebP",
+        "tags": ["📤 Admin - Upload"],
+        "summary": "Upload gambar",
+        "description": "Upload file gambar untuk menu item. Maks 2MB, format: JPG, PNG, WebP.",
         "operationId": "uploadImage",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{ "adminAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1547,7 +2143,7 @@
                 "type": "object",
                 "required": ["image"],
                 "properties": {
-                  "image": { "type": "string", "format": "binary" }
+                  "image": { "type": "string", "format": "binary", "description": "File gambar (JPG/PNG/WebP, maks 2MB)" }
                 }
               }
             }
@@ -1555,9 +2151,10 @@
         },
         "responses": {
           "200": {
-            "description": "Upload successful",
+            "description": "Upload berhasil",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
                 "example": {
                   "success": true,
                   "data": {
@@ -1570,10 +2167,36 @@
             }
           },
           "400": {
-            "description": "Invalid file",
+            "description": "File tidak valid",
             "content": {
               "application/json": {
-                "example": { "success": false, "error": { "message": "No file uploaded" } }
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "noFile": {
+                    "summary": "Tidak ada file",
+                    "value": { "success": false, "error": { "message": "No file uploaded" } }
+                  },
+                  "tooLarge": {
+                    "summary": "File terlalu besar",
+                    "value": { "success": false, "error": { "message": "File size exceeds 2MB limit" } }
+                  },
+                  "invalidType": {
+                    "summary": "Format tidak didukung",
+                    "value": { "success": false, "error": { "message": "Only JPG, PNG, and WebP files are allowed" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
               }
             }
           }
@@ -1583,69 +2206,110 @@
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
+      "memberAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT access token (15min). Get from /api/auth/register, /api/auth/login, or /api/auth/admin/login"
+        "description": "Member JWT. Get from POST /api/auth/register or POST /api/auth/login. Copy the accessToken from the response."
+      },
+      "adminAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Admin JWT. Get from POST /api/auth/admin/login. Copy the accessToken from the response."
       }
     },
     "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "object", "description": "Response data (varies per endpoint)" }
+        },
+        "required": ["success", "data"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": { "type": "string", "description": "Human-readable error message" },
+              "code": { "type": "string", "description": "Machine-readable error code (optional)" },
+              "details": {
+                "type": "array",
+                "description": "Validation error details (optional)",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "required": ["message"]
+          }
+        },
+        "required": ["success", "error"]
+      },
       "RegisterRequest": {
         "type": "object",
         "required": ["name", "whatsapp", "tenantId", "accessMethod"],
         "properties": {
-          "name": { "type": "string", "minLength": 2, "maxLength": 100, "description": "Letters, spaces, periods, apostrophes only" },
-          "whatsapp": { "type": "string", "description": "Indonesian format: 08xx, +628xx, or 628xx (10-13 digits)" },
-          "tenantId": { "type": "string", "format": "uuid" },
-          "accessMethod": { "type": "string", "enum": ["nfc", "qr", "direct"] }
+          "name": { "type": "string", "minLength": 2, "maxLength": 100, "description": "Nama member. Huruf, spasi, titik, dan apostrof saja." },
+          "whatsapp": { "type": "string", "description": "Format Indonesia: 08xx, +628xx, atau 628xx (10-13 digit)" },
+          "tenantId": { "type": "string", "format": "uuid", "description": "UUID tenant/toko" },
+          "accessMethod": { "type": "string", "enum": ["nfc", "qr", "direct"], "description": "Metode akses: NFC tag, QR code, atau direct link" }
         }
       },
       "LoginRequest": {
         "type": "object",
         "required": ["whatsapp", "tenantId"],
         "properties": {
-          "whatsapp": { "type": "string" },
-          "tenantId": { "type": "string", "format": "uuid" }
+          "whatsapp": { "type": "string", "description": "Nomor WhatsApp terdaftar" },
+          "tenantId": { "type": "string", "format": "uuid", "description": "UUID tenant/toko" }
         }
       },
       "AdminLoginRequest": {
         "type": "object",
         "required": ["email", "password"],
         "properties": {
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string" }
+          "email": { "type": "string", "format": "email", "description": "Email admin" },
+          "password": { "type": "string", "description": "Password admin" }
         }
       },
       "CreateCategoryRequest": {
         "type": "object",
         "required": ["name"],
         "properties": {
-          "name": { "type": "string", "minLength": 1, "maxLength": 50 },
-          "sortOrder": { "type": "integer", "default": 0 }
+          "name": { "type": "string", "minLength": 1, "maxLength": 50, "description": "Nama kategori menu" },
+          "sortOrder": { "type": "integer", "default": 0, "description": "Urutan tampilan (opsional, default 0)" }
         }
       },
       "CreateMenuItemRequest": {
         "type": "object",
         "required": ["name", "price", "categoryId"],
         "properties": {
-          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
-          "description": { "type": "string", "maxLength": 200 },
-          "price": { "type": "integer", "minimum": 0, "description": "Price in IDR (integer)" },
-          "categoryId": { "type": "string", "format": "uuid" },
-          "imageUrl": { "type": "string", "format": "uri" },
-          "isAvailable": { "type": "boolean", "default": true }
+          "name": { "type": "string", "minLength": 1, "maxLength": 100, "description": "Nama menu item" },
+          "description": { "type": "string", "maxLength": 200, "description": "Deskripsi singkat menu" },
+          "price": { "type": "integer", "minimum": 0, "description": "Harga dalam IDR (bilangan bulat)" },
+          "categoryId": { "type": "string", "format": "uuid", "description": "ID kategori parent" },
+          "imageUrl": { "type": "string", "format": "uri", "description": "URL gambar menu (dari upload endpoint)" },
+          "isAvailable": { "type": "boolean", "default": true, "description": "Apakah menu tersedia" }
         }
       },
       "UpdateMenuItemRequest": {
         "type": "object",
+        "description": "Semua field opsional — hanya kirim field yang mau diubah.",
         "properties": {
-          "name": { "type": "string", "maxLength": 100 },
-          "description": { "type": "string", "maxLength": 200 },
-          "price": { "type": "integer", "minimum": 0 },
-          "categoryId": { "type": "string", "format": "uuid" },
-          "imageUrl": { "type": "string", "nullable": true },
-          "isAvailable": { "type": "boolean" }
+          "name": { "type": "string", "maxLength": 100, "description": "Nama menu item" },
+          "description": { "type": "string", "maxLength": 200, "description": "Deskripsi singkat menu" },
+          "price": { "type": "integer", "minimum": 0, "description": "Harga dalam IDR" },
+          "categoryId": { "type": "string", "format": "uuid", "description": "Pindah ke kategori lain" },
+          "imageUrl": { "type": "string", "nullable": true, "description": "URL gambar (null untuk hapus)" },
+          "isAvailable": { "type": "boolean", "description": "Ketersediaan menu" }
         }
       },
       "CheckoutRequest": {
@@ -1655,52 +2319,65 @@
           "items": {
             "type": "array",
             "minItems": 1,
+            "description": "Daftar item yang dipesan",
             "items": {
               "type": "object",
               "required": ["menuItemId", "quantity"],
               "properties": {
-                "menuItemId": { "type": "string", "format": "uuid" },
-                "quantity": { "type": "integer", "minimum": 1, "maximum": 99 }
+                "menuItemId": { "type": "string", "format": "uuid", "description": "ID menu item" },
+                "quantity": { "type": "integer", "minimum": 1, "maximum": 99, "description": "Jumlah pesanan (1-99)" }
               }
             }
           },
-          "voucherCode": { "type": "string", "maxLength": 20 }
+          "voucherCode": { "type": "string", "maxLength": 20, "description": "Kode voucher untuk diskon (opsional)" }
         }
       },
       "CreateVoucherRequest": {
         "type": "object",
         "required": ["code", "discountType", "discountValue", "expiryDate", "maxUsage"],
         "properties": {
-          "code": { "type": "string", "minLength": 1, "maxLength": 20, "pattern": "^[a-zA-Z0-9]+$" },
-          "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
-          "discountValue": { "type": "integer", "description": "1-100 for percentage, 1000-10000000 for fixed" },
-          "expiryDate": { "type": "string", "format": "date-time", "description": "Must be future date (ISO 8601)" },
-          "maxUsage": { "type": "integer", "minimum": 1 }
+          "code": { "type": "string", "minLength": 1, "maxLength": 20, "pattern": "^[a-zA-Z0-9]+$", "description": "Kode voucher unik (alfanumerik saja)" },
+          "discountType": { "type": "string", "enum": ["percentage", "fixed"], "description": "Tipe diskon: persentase atau nominal tetap" },
+          "discountValue": { "type": "integer", "description": "Nilai diskon. 1-100 untuk percentage, 1000-10000000 untuk fixed (IDR)" },
+          "expiryDate": { "type": "string", "format": "date-time", "description": "Tanggal kadaluarsa (harus di masa depan, format ISO 8601)" },
+          "maxUsage": { "type": "integer", "minimum": 1, "description": "Batas maksimal penggunaan voucher" }
         }
       },
       "CreateRewardRequest": {
         "type": "object",
         "required": ["name", "requiredPoints", "stockQuantity"],
         "properties": {
-          "name": { "type": "string", "maxLength": 100 },
-          "description": { "type": "string", "maxLength": 500 },
-          "requiredPoints": { "type": "integer", "minimum": 1 },
-          "stockQuantity": { "type": "integer", "minimum": 0 },
-          "isActive": { "type": "boolean", "default": true }
+          "name": { "type": "string", "maxLength": 100, "description": "Nama reward" },
+          "description": { "type": "string", "maxLength": 500, "description": "Deskripsi reward" },
+          "requiredPoints": { "type": "integer", "minimum": 1, "description": "Jumlah poin yang dibutuhkan untuk redeem" },
+          "stockQuantity": { "type": "integer", "minimum": 0, "description": "Jumlah stok tersedia" },
+          "isActive": { "type": "boolean", "default": true, "description": "Status aktif reward" }
+        }
+      },
+      "UpdateRewardRequest": {
+        "type": "object",
+        "description": "Semua field opsional — hanya kirim field yang mau diubah.",
+        "properties": {
+          "name": { "type": "string", "maxLength": 100, "description": "Nama reward" },
+          "description": { "type": "string", "maxLength": 500, "description": "Deskripsi reward" },
+          "requiredPoints": { "type": "integer", "minimum": 1, "description": "Jumlah poin yang dibutuhkan" },
+          "stockQuantity": { "type": "integer", "minimum": 0, "description": "Jumlah stok" },
+          "isActive": { "type": "boolean", "description": "Status aktif" }
         }
       },
       "UpdateSettingsRequest": {
         "type": "object",
+        "description": "Pengaturan tenant. Semua field opsional — hanya kirim yang mau diubah.",
         "properties": {
-          "pointsPerAmount": { "type": "integer", "minimum": 1 },
-          "amountPerPoint": { "type": "integer", "minimum": 1000, "maximum": 100000 },
-          "pointExpiryDays": { "type": "integer", "minimum": 30, "nullable": true },
-          "googlePlaceUrl": { "type": "string", "maxLength": 2048, "nullable": true },
-          "reviewRewardType": { "type": "string", "enum": ["points", "voucher"], "nullable": true },
-          "reviewRewardValue": { "type": "integer", "minimum": 1, "nullable": true },
-          "welcomeVoucherType": { "type": "string", "enum": ["percentage", "fixed"], "nullable": true },
-          "welcomeVoucherValue": { "type": "integer", "minimum": 1, "nullable": true },
-          "welcomeVoucherDays": { "type": "integer", "minimum": 1, "nullable": true }
+          "pointsPerAmount": { "type": "integer", "minimum": 1, "description": "Jumlah poin yang diberikan per kelipatan amountPerPoint" },
+          "amountPerPoint": { "type": "integer", "minimum": 1000, "maximum": 100000, "description": "Kelipatan harga (IDR) untuk mendapat poin. Contoh: 10000 = setiap Rp10.000 dapat 1 poin" },
+          "pointExpiryDays": { "type": "integer", "minimum": 30, "nullable": true, "description": "Masa berlaku poin dalam hari (null = tidak ada expiry)" },
+          "googlePlaceUrl": { "type": "string", "maxLength": 2048, "nullable": true, "description": "URL Google Maps/Place untuk review booster" },
+          "reviewRewardType": { "type": "string", "enum": ["points", "voucher"], "nullable": true, "description": "Tipe reward untuk review click" },
+          "reviewRewardValue": { "type": "integer", "minimum": 1, "nullable": true, "description": "Nilai reward review (jumlah poin atau nilai voucher)" },
+          "welcomeVoucherType": { "type": "string", "enum": ["percentage", "fixed"], "nullable": true, "description": "Tipe welcome voucher untuk member baru" },
+          "welcomeVoucherValue": { "type": "integer", "minimum": 1, "nullable": true, "description": "Nilai welcome voucher" },
+          "welcomeVoucherDays": { "type": "integer", "minimum": 1, "nullable": true, "description": "Masa berlaku welcome voucher dalam hari" }
         }
       }
     }
