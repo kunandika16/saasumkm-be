@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "NFC Loyalty & Customer Growth Platform API",
-    "description": "REST API untuk platform loyalty berbasis NFC/QR untuk UMKM Indonesia. Menyediakan fitur registrasi member, pemesanan, validasi pembayaran manual, poin loyalitas, voucher, dan dashboard analytics.\n\n## Authentication\n\nAPI ini menggunakan 2 jenis token JWT:\n- **Member Token** — Didapat dari `POST /api/auth/register` atau `POST /api/auth/login`\n- **Admin Token** — Didapat dari `POST /api/auth/admin/login`\n\nGunakan tombol **Authorize** di atas untuk memasukkan token. Token berlaku 15 menit, gunakan refresh endpoint untuk memperpanjang.",
+    "description": "REST API untuk platform loyalty berbasis NFC/QR untuk UMKM Indonesia. Menyediakan fitur registrasi member, pemesanan, validasi pembayaran manual, poin loyalitas, voucher, dan dashboard analytics.\n\n## Authentication\n\nAPI ini menggunakan 2 jenis token JWT:\n- **Member Token** — Didapat dari `POST /api/auth/register` atau `POST /api/auth/login`\n- **Admin Token** — Didapat dari `POST /api/auth/admin/login`\n\nGunakan tombol **Authorize** di atas untuk memasukkan token. Gunakan variable `{{memberToken}}` untuk member auth dan `{{adminToken}}` untuk admin auth. Token berlaku 15 menit, gunakan refresh endpoint untuk memperpanjang.",
     "version": "1.0.0",
     "contact": { "name": "NFC Loyalty Platform" }
   },
@@ -12,43 +12,43 @@
   "x-tagGroups": [
     {
       "name": "Authentication",
-      "tags": ["🔓 Auth - Member", "🔓 Auth - Admin"]
+      "tags": ["Auth - Member", "Auth - Admin"]
     },
     {
       "name": "Member Features",
-      "tags": ["👤 Member", "🛒 Ordering", "🎫 Vouchers - Member", "🎁 Rewards & Points - Member", "⭐ Reviews - Member"]
+      "tags": ["Member - Profile", "Member - Ordering", "Member - Vouchers", "Member - Rewards", "Member - Reviews"]
     },
     {
       "name": "Admin Panel",
-      "tags": ["📊 Admin - Analytics", "📋 Admin - Orders", "🏷️ Admin - Vouchers", "🎁 Admin - Rewards", "🍽️ Admin - Menu", "👥 Admin - Members", "⚙️ Admin - Settings", "📤 Admin - Upload"]
+      "tags": ["Admin - Analytics", "Admin - Orders", "Admin - Vouchers", "Admin - Rewards", "Admin - Menu", "Admin - Members", "Admin - Settings", "Admin - Upload"]
     },
     {
       "name": "System",
-      "tags": ["💓 Health"]
+      "tags": ["System"]
     }
   ],
   "tags": [
-    { "name": "🔓 Auth - Member", "description": "Autentikasi member: register, login, refresh token" },
-    { "name": "🔓 Auth - Admin", "description": "Autentikasi admin: login, refresh token" },
-    { "name": "👤 Member", "description": "Profil member dan pencatatan kunjungan" },
-    { "name": "🛒 Ordering", "description": "Browsing menu (public), checkout pesanan, riwayat order" },
-    { "name": "🎫 Vouchers - Member", "description": "Validasi kode voucher dari sisi member" },
-    { "name": "🎁 Rewards & Points - Member", "description": "Redeem reward, lihat riwayat poin" },
-    { "name": "⭐ Reviews - Member", "description": "Google Review Booster — klik link review" },
-    { "name": "📊 Admin - Analytics", "description": "Dashboard analytics: overview, daily visitors, dormant members, menu popularity" },
-    { "name": "📋 Admin - Orders", "description": "Kelola pesanan: list order, validasi pembayaran" },
-    { "name": "🏷️ Admin - Vouchers", "description": "Kelola voucher: buat, list, deaktivasi" },
-    { "name": "🎁 Admin - Rewards", "description": "Kelola reward: buat, update" },
-    { "name": "🍽️ Admin - Menu", "description": "Kelola menu: kategori dan item (CRUD)" },
-    { "name": "👥 Admin - Members", "description": "Lihat daftar member terdaftar" },
-    { "name": "⚙️ Admin - Settings", "description": "Pengaturan tenant: poin, voucher welcome, Google Review" },
-    { "name": "📤 Admin - Upload", "description": "Upload file gambar untuk menu" },
-    { "name": "💓 Health", "description": "Health check endpoint untuk monitoring server" }
+    { "name": "Auth - Member", "description": "Autentikasi member: register, login, refresh token" },
+    { "name": "Auth - Admin", "description": "Autentikasi admin: login, refresh token" },
+    { "name": "Member - Profile", "description": "Profil member dan pencatatan kunjungan" },
+    { "name": "Member - Ordering", "description": "Browsing menu (public), checkout pesanan, riwayat order" },
+    { "name": "Member - Vouchers", "description": "Validasi kode voucher dari sisi member" },
+    { "name": "Member - Rewards", "description": "Redeem reward, lihat riwayat poin" },
+    { "name": "Member - Reviews", "description": "Google Review Booster — klik link review" },
+    { "name": "Admin - Analytics", "description": "Dashboard analytics: overview, daily visitors, dormant members, menu popularity, review stats" },
+    { "name": "Admin - Orders", "description": "Kelola pesanan: list order, validasi pembayaran" },
+    { "name": "Admin - Vouchers", "description": "Kelola voucher: buat, list, deaktivasi" },
+    { "name": "Admin - Rewards", "description": "Kelola reward: buat, update" },
+    { "name": "Admin - Menu", "description": "Kelola menu: kategori dan item (CRUD)" },
+    { "name": "Admin - Members", "description": "Lihat daftar member terdaftar" },
+    { "name": "Admin - Settings", "description": "Pengaturan tenant: poin, voucher welcome, Google Review, branding" },
+    { "name": "Admin - Upload", "description": "Upload file gambar untuk menu" },
+    { "name": "System", "description": "Health check endpoint untuk monitoring server" }
   ],
   "paths": {
     "/api/health": {
       "get": {
-        "tags": ["💓 Health"],
+        "tags": ["System"],
         "summary": "Health check",
         "description": "Cek apakah server berjalan normal. Tidak memerlukan autentikasi.",
         "operationId": "healthCheck",
@@ -66,9 +66,12 @@
                   }
                 },
                 "example": {
-                  "status": "ok",
-                  "timestamp": "2025-07-15T10:30:00.000Z",
-                  "environment": "development"
+                  "success": true,
+                  "data": {
+                    "status": "ok",
+                    "timestamp": "2025-07-15T10:30:00.000Z",
+                    "environment": "development"
+                  }
                 }
               }
             }
@@ -78,9 +81,9 @@
     },
     "/api/auth/register": {
       "post": {
-        "tags": ["🔓 Auth - Member"],
+        "tags": ["Auth - Member"],
         "summary": "Register member baru",
-        "description": "Registrasi member baru. Jika nomor WhatsApp sudah terdaftar, otomatis login. Mengeluarkan welcome voucher jika dikonfigurasi di settings.",
+        "description": "Registrasi member baru. Jika nomor WhatsApp sudah terdaftar, otomatis login. Mengeluarkan welcome voucher jika dikonfigurasi di settings.\n\nApidog: Post-processor → Extract Variable → JSONPath: $.data.accessToken → Variable: memberToken",
         "operationId": "registerMember",
         "requestBody": {
           "required": true,
@@ -128,8 +131,8 @@
                   "success": true,
                   "data": {
                     "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                    "accessToken": "eyJhbGciOiJIUzI1NiJ9.access_token_here",
-                    "refreshToken": "eyJhbGciOiJIUzI1NiJ9.refresh_token_here"
+                    "accessToken": "eyJhbGciOiJIUzI1NiJ9.member_access_token",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiJ9.member_refresh_token"
                   }
                 }
               }
@@ -158,9 +161,9 @@
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["🔓 Auth - Member"],
+        "tags": ["Auth - Member"],
         "summary": "Login member via WhatsApp",
-        "description": "Login menggunakan nomor WhatsApp terdaftar. Mengembalikan access token dan refresh token.",
+        "description": "Login menggunakan nomor WhatsApp terdaftar. Mengembalikan access token dan refresh token.\n\nApidog: Post-processor → Extract Variable → JSONPath: $.data.accessToken → Variable: memberToken",
         "operationId": "loginMember",
         "requestBody": {
           "required": true,
@@ -208,7 +211,7 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": ["🔓 Auth - Member", "🔓 Auth - Admin"],
+        "tags": ["Auth - Member", "Auth - Admin"],
         "summary": "Refresh access token",
         "description": "Tukar refresh token dengan access token baru. Berlaku untuk member maupun admin token.",
         "operationId": "refreshToken",
@@ -262,9 +265,9 @@
     },
     "/api/auth/admin/login": {
       "post": {
-        "tags": ["🔓 Auth - Admin"],
+        "tags": ["Auth - Admin"],
         "summary": "Admin login",
-        "description": "Login admin menggunakan email dan password. Mengembalikan admin access token.",
+        "description": "Login admin menggunakan email dan password. Mengembalikan admin access token.\n\nApidog: Post-processor → Extract Variable → JSONPath: $.data.accessToken → Variable: adminToken",
         "operationId": "adminLogin",
         "requestBody": {
           "required": true,
@@ -312,7 +315,7 @@
     },
     "/api/members/me": {
       "get": {
-        "tags": ["👤 Member"],
+        "tags": ["Member - Profile"],
         "summary": "Get profil member",
         "description": "Mengambil data profil member yang sedang login.",
         "operationId": "getMemberProfile",
@@ -354,7 +357,7 @@
         }
       },
       "patch": {
-        "tags": ["👤 Member"],
+        "tags": ["Member - Profile"],
         "summary": "Update nama member",
         "description": "Member bisa mengubah nama profil mereka.",
         "operationId": "updateMemberProfile",
@@ -413,7 +416,7 @@
     },
     "/api/visits": {
       "post": {
-        "tags": ["👤 Member"],
+        "tags": ["Member - Profile"],
         "summary": "Catat kunjungan",
         "description": "Mencatat event kunjungan member ke toko via NFC/QR/direct.",
         "operationId": "recordVisit",
@@ -468,7 +471,7 @@
     },
     "/api/menu/categories": {
       "get": {
-        "tags": ["🛒 Ordering"],
+        "tags": ["Member - Ordering"],
         "summary": "Get menu categories & items (public)",
         "description": "Mengambil semua kategori menu beserta item-nya. Endpoint ini public, tidak perlu token.",
         "operationId": "getMenuCategories",
@@ -558,7 +561,7 @@
     },
     "/api/orders/checkout": {
       "post": {
-        "tags": ["🛒 Ordering"],
+        "tags": ["Member - Ordering"],
         "summary": "Checkout order",
         "description": "Buat pesanan baru dari item yang dipilih. Opsional bisa pakai kode voucher untuk diskon.",
         "operationId": "checkoutOrder",
@@ -627,7 +630,7 @@
     },
     "/api/orders": {
       "get": {
-        "tags": ["🛒 Ordering"],
+        "tags": ["Member - Ordering"],
         "summary": "Riwayat order member",
         "description": "Mengambil riwayat pesanan member yang sedang login, dengan paginasi.",
         "operationId": "getMemberOrders",
@@ -685,7 +688,7 @@
     },
     "/api/vouchers/validate": {
       "post": {
-        "tags": ["🎫 Vouchers - Member"],
+        "tags": ["Member - Vouchers"],
         "summary": "Validasi kode voucher",
         "description": "Cek apakah kode voucher valid, belum expired, dan masih bisa dipakai.",
         "operationId": "validateVoucher",
@@ -762,7 +765,7 @@
     },
     "/api/rewards": {
       "get": {
-        "tags": ["🎁 Rewards & Points - Member"],
+        "tags": ["Member - Rewards"],
         "summary": "List reward yang bisa di-redeem",
         "description": "Menampilkan daftar reward aktif yang tersedia untuk member.",
         "operationId": "getRedeemableRewards",
@@ -816,7 +819,7 @@
     },
     "/api/rewards/{id}/redeem": {
       "post": {
-        "tags": ["🎁 Rewards & Points - Member"],
+        "tags": ["Member - Rewards"],
         "summary": "Redeem reward",
         "description": "Tukar poin member dengan reward. Poin akan dikurangi sesuai harga reward.",
         "operationId": "redeemReward",
@@ -880,7 +883,7 @@
     },
     "/api/members/me/points": {
       "get": {
-        "tags": ["🎁 Rewards & Points - Member"],
+        "tags": ["Member - Rewards"],
         "summary": "Riwayat transaksi poin",
         "description": "Mengambil riwayat transaksi poin member (earned dan redeemed).",
         "operationId": "getPointHistory",
@@ -943,7 +946,7 @@
     },
     "/api/reviews/click": {
       "post": {
-        "tags": ["⭐ Reviews - Member"],
+        "tags": ["Member - Reviews"],
         "summary": "Catat klik Google Review",
         "description": "Mencatat klik link Google Review. Memberikan reward poin sekali saja (first click).",
         "operationId": "recordReviewClick",
@@ -1006,7 +1009,7 @@
     },
     "/api/admin/analytics/overview": {
       "get": {
-        "tags": ["📊 Admin - Analytics"],
+        "tags": ["Admin - Analytics"],
         "summary": "Dashboard overview metrics",
         "description": "Menampilkan ringkasan metrik dashboard: total member, kunjungan bulan ini, repeat customer, top members, total voucher redeemed, total order & revenue.",
         "operationId": "getAnalyticsOverview",
@@ -1052,7 +1055,7 @@
     },
     "/api/admin/analytics/daily-visitors": {
       "get": {
-        "tags": ["📊 Admin - Analytics"],
+        "tags": ["Admin - Analytics"],
         "summary": "Tren pengunjung harian (bulan ini)",
         "description": "Data jumlah pengunjung unik per hari untuk bulan berjalan.",
         "operationId": "getDailyVisitors",
@@ -1093,7 +1096,7 @@
     },
     "/api/admin/analytics/dormant-members": {
       "get": {
-        "tags": ["📊 Admin - Analytics"],
+        "tags": ["Admin - Analytics"],
         "summary": "Member dormant (30+ hari tidak berkunjung)",
         "description": "Daftar member yang tidak berkunjung selama 30 hari atau lebih. Maksimal 50 hasil.",
         "operationId": "getDormantMembers",
@@ -1131,7 +1134,7 @@
     },
     "/api/admin/analytics/menu-popularity": {
       "get": {
-        "tags": ["📊 Admin - Analytics"],
+        "tags": ["Admin - Analytics"],
         "summary": "Menu popularity ranking (top 10)",
         "description": "Ranking 10 menu item paling banyak dipesan.",
         "operationId": "getMenuPopularity",
@@ -1170,7 +1173,7 @@
     },
     "/api/admin/reviews/stats": {
       "get": {
-        "tags": ["📊 Admin - Analytics"],
+        "tags": ["Admin - Analytics"],
         "summary": "Statistik Google Review Booster",
         "description": "Statistik klik link Google Review: total clickers, total clicks, conversion rate.",
         "operationId": "getReviewStats",
@@ -1210,7 +1213,7 @@
     },
     "/api/admin/orders": {
       "get": {
-        "tags": ["📋 Admin - Orders"],
+        "tags": ["Admin - Orders"],
         "summary": "List semua order",
         "description": "Daftar order yang bisa difilter berdasarkan status. Order pending diurutkan paling lama dulu, lainnya terbaru dulu.",
         "operationId": "listAdminOrders",
@@ -1268,7 +1271,7 @@
     },
     "/api/admin/orders/{orderId}/validate": {
       "post": {
-        "tags": ["📋 Admin - Orders"],
+        "tags": ["Admin - Orders"],
         "summary": "Validasi pembayaran (confirm/reject)",
         "description": "Admin mengkonfirmasi atau menolak pembayaran order. Jika confirm, poin diberikan ke member dan notifikasi WA dikirim.",
         "operationId": "validatePayment",
@@ -1350,7 +1353,7 @@
     },
     "/api/admin/vouchers": {
       "get": {
-        "tags": ["🏷️ Admin - Vouchers"],
+        "tags": ["Admin - Vouchers"],
         "summary": "List semua voucher",
         "description": "Daftar semua voucher dengan statistik penggunaan (remaining uses, redemption rate).",
         "operationId": "listVouchers",
@@ -1408,7 +1411,7 @@
         }
       },
       "post": {
-        "tags": ["🏷️ Admin - Vouchers"],
+        "tags": ["Admin - Vouchers"],
         "summary": "Buat voucher baru",
         "description": "Membuat voucher baru dengan kode unik, tipe diskon, dan batas penggunaan.",
         "operationId": "createVoucher",
@@ -1482,7 +1485,7 @@
     },
     "/api/admin/vouchers/{id}/deactivate": {
       "patch": {
-        "tags": ["🏷️ Admin - Vouchers"],
+        "tags": ["Admin - Vouchers"],
         "summary": "Deaktivasi voucher",
         "description": "Menonaktifkan voucher sehingga tidak bisa dipakai lagi.",
         "operationId": "deactivateVoucher",
@@ -1536,7 +1539,7 @@
     },
     "/api/admin/rewards": {
       "post": {
-        "tags": ["🎁 Admin - Rewards"],
+        "tags": ["Admin - Rewards"],
         "summary": "Buat reward baru",
         "description": "Membuat reward yang bisa di-redeem oleh member dengan poin.",
         "operationId": "createReward",
@@ -1609,7 +1612,7 @@
     },
     "/api/admin/rewards/{id}": {
       "patch": {
-        "tags": ["🎁 Admin - Rewards"],
+        "tags": ["Admin - Rewards"],
         "summary": "Update reward",
         "description": "Mengubah detail reward (nama, poin, stok, status aktif).",
         "operationId": "updateReward",
@@ -1682,7 +1685,7 @@
     },
     "/api/admin/menu/categories": {
       "post": {
-        "tags": ["🍽️ Admin - Menu"],
+        "tags": ["Admin - Menu"],
         "summary": "Buat kategori menu",
         "description": "Membuat kategori menu baru (misal: Makanan, Minuman, Snack).",
         "operationId": "createMenuCategory",
@@ -1743,23 +1746,26 @@
     },
     "/api/admin/menu/items": {
       "post": {
-        "tags": ["🍽️ Admin - Menu"],
+        "tags": ["Admin - Menu"],
         "summary": "Buat menu item",
-        "description": "Membuat item menu baru di bawah kategori tertentu.",
+        "description": "Membuat item menu baru di bawah kategori tertentu. Gunakan multipart/form-data untuk upload gambar bersama data.",
         "operationId": "createMenuItem",
         "security": [{ "adminAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateMenuItemRequest" },
-              "example": {
-                "name": "Nasi Goreng Spesial",
-                "description": "Nasi goreng dengan telur, ayam, dan sayuran",
-                "price": 25000,
-                "categoryId": "d4e5f6a7-b8c9-0123-defg-456789012345",
-                "imageUrl": "https://example.com/nasi-goreng.jpg",
-                "isAvailable": true
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price", "categoryId"],
+                "properties": {
+                  "name": { "type": "string", "description": "Nama menu item (1-100 chars)" },
+                  "price": { "type": "string", "description": "Harga dalam IDR, contoh: 25000" },
+                  "categoryId": { "type": "string", "format": "uuid", "description": "ID kategori" },
+                  "description": { "type": "string", "description": "Deskripsi singkat (max 200 chars)" },
+                  "isAvailable": { "type": "string", "enum": ["true", "false"], "description": "Ketersediaan menu" },
+                  "image": { "type": "string", "format": "binary", "description": "File gambar (JPG/PNG/WebP, max 2MB)" }
+                }
               }
             }
           }
@@ -1779,7 +1785,7 @@
                     "name": "Nasi Goreng Spesial",
                     "description": "Nasi goreng dengan telur, ayam, dan sayuran",
                     "price": 25000,
-                    "imageUrl": "https://example.com/nasi-goreng.jpg",
+                    "imageUrl": "https://cdn.sentuhpro.com/menu/1721042400000-nasi-goreng.jpg",
                     "isAvailable": true,
                     "sortOrder": 0,
                     "createdAt": "2025-07-15T10:30:00.000Z"
@@ -1795,7 +1801,7 @@
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "example": {
                   "success": false,
-                  "error": { "message": "Validation failed", "details": [{ "field": "price", "message": "Harga minimal Rp0" }] }
+                  "error": { "message": "Validation failed", "details": [{ "field": "price", "message": "Harga harus bilangan bulat minimal 0" }] }
                 }
               }
             }
@@ -1829,9 +1835,9 @@
     },
     "/api/admin/menu/items/{id}": {
       "patch": {
-        "tags": ["🍽️ Admin - Menu"],
+        "tags": ["Admin - Menu"],
         "summary": "Update menu item",
-        "description": "Mengubah detail menu item (nama, harga, deskripsi, ketersediaan).",
+        "description": "Mengubah detail menu item (nama, harga, deskripsi, ketersediaan, gambar). Gunakan multipart/form-data, semua field opsional.",
         "operationId": "updateMenuItem",
         "security": [{ "adminAuth": [] }],
         "parameters": [
@@ -1840,9 +1846,18 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateMenuItemRequest" },
-              "example": { "name": "Nasi Goreng Super", "price": 28000, "isAvailable": false }
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "description": "Nama menu item (1-100 chars)" },
+                  "price": { "type": "string", "description": "Harga dalam IDR, contoh: 28000" },
+                  "categoryId": { "type": "string", "format": "uuid", "description": "Pindah ke kategori lain" },
+                  "description": { "type": "string", "description": "Deskripsi singkat (max 200 chars)" },
+                  "isAvailable": { "type": "string", "enum": ["true", "false"], "description": "Ketersediaan menu" },
+                  "image": { "type": "string", "format": "binary", "description": "File gambar baru (JPG/PNG/WebP, max 2MB)" }
+                }
+              }
             }
           }
         },
@@ -1859,7 +1874,7 @@
                     "name": "Nasi Goreng Super",
                     "description": "Nasi goreng dengan telur, ayam, dan sayuran",
                     "price": 28000,
-                    "imageUrl": "https://example.com/nasi-goreng.jpg",
+                    "imageUrl": "https://cdn.sentuhpro.com/menu/1721042400000-nasi-goreng.jpg",
                     "isAvailable": false,
                     "sortOrder": 0
                   }
@@ -1894,7 +1909,7 @@
         }
       },
       "delete": {
-        "tags": ["🍽️ Admin - Menu"],
+        "tags": ["Admin - Menu"],
         "summary": "Hapus menu item",
         "description": "Menghapus menu item secara permanen.",
         "operationId": "deleteMenuItem",
@@ -1944,7 +1959,7 @@
     },
     "/api/admin/members": {
       "get": {
-        "tags": ["👥 Admin - Members"],
+        "tags": ["Admin - Members"],
         "summary": "List semua member",
         "description": "Daftar semua member terdaftar dengan paginasi.",
         "operationId": "listMembers",
@@ -2005,9 +2020,9 @@
     },
     "/api/admin/settings": {
       "get": {
-        "tags": ["⚙️ Admin - Settings"],
+        "tags": ["Admin - Settings"],
         "summary": "Get pengaturan tenant",
-        "description": "Mengambil semua pengaturan tenant: konfigurasi poin, welcome voucher, Google Review.",
+        "description": "Mengambil semua pengaturan tenant: konfigurasi poin, welcome voucher, Google Review, branding.",
         "operationId": "getSettings",
         "security": [{ "adminAuth": [] }],
         "responses": {
@@ -2030,7 +2045,16 @@
                     "welcomeVoucherType": "percentage",
                     "welcomeVoucherValue": 10,
                     "welcomeVoucherDays": 30,
-                    "updatedAt": "2025-07-01T00:00:00.000Z"
+                    "updatedAt": "2025-07-01T00:00:00.000Z",
+                    "tenant": {
+                      "id": "550e8400-e29b-41d4-a716-446655440000",
+                      "businessName": "Toko Budi",
+                      "description": "Warung makan nasi goreng spesial",
+                      "logoUrl": "https://cdn.sentuhpro.com/branding/logo.jpg",
+                      "bannerUrl": "https://cdn.sentuhpro.com/branding/banner.jpg",
+                      "locationMapUrl": "https://maps.app.goo.gl/xyz",
+                      "socialLinks": { "instagram": "https://instagram.com/tokobudi", "whatsapp": "081234567890" }
+                    }
                   }
                 }
               }
@@ -2051,9 +2075,9 @@
         }
       },
       "patch": {
-        "tags": ["⚙️ Admin - Settings"],
+        "tags": ["Admin - Settings"],
         "summary": "Update pengaturan tenant",
-        "description": "Mengubah pengaturan tenant. Semua field opsional — hanya kirim field yang mau diubah.",
+        "description": "Mengubah pengaturan tenant (poin, voucher, review). Semua field opsional — hanya kirim field yang mau diubah.",
         "operationId": "updateSettings",
         "security": [{ "adminAuth": [] }],
         "requestBody": {
@@ -2128,9 +2152,82 @@
         }
       }
     },
+    "/api/admin/settings/branding": {
+      "patch": {
+        "tags": ["Admin - Settings"],
+        "summary": "Update branding tenant",
+        "description": "Mengubah branding tenant (logo, banner, nama bisnis, deskripsi, lokasi, social links). Gunakan multipart/form-data untuk upload file. Semua field opsional.",
+        "operationId": "updateBranding",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "businessName": { "type": "string", "description": "Nama bisnis / toko" },
+                  "description": { "type": "string", "description": "Deskripsi toko (max 500 chars)" },
+                  "locationMapUrl": { "type": "string", "description": "URL Google Maps lokasi toko" },
+                  "socialLinks": { "type": "string", "description": "JSON string social links, contoh: {\"instagram\":\"https://instagram.com/tokobudi\",\"whatsapp\":\"081234567890\"}" },
+                  "logo": { "type": "string", "format": "binary", "description": "File logo (JPG/PNG/WebP, max 2MB)" },
+                  "banner": { "type": "string", "format": "binary", "description": "File banner (JPG/PNG/WebP, max 5MB)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Branding berhasil diupdate",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "businessName": "Toko Budi",
+                    "description": "Warung makan nasi goreng spesial",
+                    "logoUrl": "https://cdn.sentuhpro.com/branding/logo-1721042400000.jpg",
+                    "bannerUrl": "https://cdn.sentuhpro.com/branding/banner-1721042400000.jpg",
+                    "locationMapUrl": "https://maps.app.goo.gl/xyz",
+                    "socialLinks": { "instagram": "https://instagram.com/tokobudi", "whatsapp": "081234567890" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "socialLinks harus berupa JSON valid" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/upload/image": {
       "post": {
-        "tags": ["📤 Admin - Upload"],
+        "tags": ["Admin - Upload"],
         "summary": "Upload gambar",
         "description": "Upload file gambar untuk menu item. Maks 2MB, format: JPG, PNG, WebP.",
         "operationId": "uploadImage",
@@ -2143,7 +2240,7 @@
                 "type": "object",
                 "required": ["image"],
                 "properties": {
-                  "image": { "type": "string", "format": "binary", "description": "File gambar (JPG/PNG/WebP, maks 2MB)" }
+                  "image": { "type": "string", "format": "binary", "description": "File gambar (JPG/PNG/WebP, max 2MB)" }
                 }
               }
             }
@@ -2158,7 +2255,7 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "url": "/uploads/1721042400000-a1b2c3d4.jpg",
+                    "url": "https://cdn.sentuhpro.com/uploads/1721042400000-a1b2c3d4.jpg",
                     "filename": "1721042400000-a1b2c3d4.jpg",
                     "size": 245760
                   }
@@ -2210,13 +2307,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Member JWT. Get from POST /api/auth/register or POST /api/auth/login. Copy the accessToken from the response."
+        "description": "Member JWT access token. Gunakan variable {{memberToken}} untuk auto-fill dari response login/register.\n\nApidog: Extract Variable → JSONPath: $.data.accessToken → Variable: memberToken"
       },
       "adminAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Admin JWT. Get from POST /api/auth/admin/login. Copy the accessToken from the response."
+        "description": "Admin JWT access token. Gunakan variable {{adminToken}} untuk auto-fill dari response admin login.\n\nApidog: Extract Variable → JSONPath: $.data.accessToken → Variable: adminToken"
       }
     },
     "schemas": {
@@ -2286,30 +2383,6 @@
         "properties": {
           "name": { "type": "string", "minLength": 1, "maxLength": 50, "description": "Nama kategori menu" },
           "sortOrder": { "type": "integer", "default": 0, "description": "Urutan tampilan (opsional, default 0)" }
-        }
-      },
-      "CreateMenuItemRequest": {
-        "type": "object",
-        "required": ["name", "price", "categoryId"],
-        "properties": {
-          "name": { "type": "string", "minLength": 1, "maxLength": 100, "description": "Nama menu item" },
-          "description": { "type": "string", "maxLength": 200, "description": "Deskripsi singkat menu" },
-          "price": { "type": "integer", "minimum": 0, "description": "Harga dalam IDR (bilangan bulat)" },
-          "categoryId": { "type": "string", "format": "uuid", "description": "ID kategori parent" },
-          "imageUrl": { "type": "string", "format": "uri", "description": "URL gambar menu (dari upload endpoint)" },
-          "isAvailable": { "type": "boolean", "default": true, "description": "Apakah menu tersedia" }
-        }
-      },
-      "UpdateMenuItemRequest": {
-        "type": "object",
-        "description": "Semua field opsional — hanya kirim field yang mau diubah.",
-        "properties": {
-          "name": { "type": "string", "maxLength": 100, "description": "Nama menu item" },
-          "description": { "type": "string", "maxLength": 200, "description": "Deskripsi singkat menu" },
-          "price": { "type": "integer", "minimum": 0, "description": "Harga dalam IDR" },
-          "categoryId": { "type": "string", "format": "uuid", "description": "Pindah ke kategori lain" },
-          "imageUrl": { "type": "string", "nullable": true, "description": "URL gambar (null untuk hapus)" },
-          "isAvailable": { "type": "boolean", "description": "Ketersediaan menu" }
         }
       },
       "CheckoutRequest": {
