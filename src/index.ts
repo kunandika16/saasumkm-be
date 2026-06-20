@@ -1,9 +1,10 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { env } from './config/env';
 import { corsOptions } from './config/cors';
+import { errorHandler } from './middleware/error-handler';
 import authRoutes from './routes/auth.routes';
 import menuRoutes from './routes/menu.routes';
 import memberRoutes from './routes/member.routes';
@@ -15,6 +16,7 @@ import orderRoutes from './routes/order.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import settingsRoutes from './routes/settings.routes';
 import uploadRoutes from './routes/upload.routes';
+import whatsappBlastRoutes from './routes/whatsapp-blast.routes';
 
 const app = express();
 
@@ -74,26 +76,11 @@ app.use('/api', settingsRoutes);
 // Upload routes (authenticated users)
 app.use('/api', uploadRoutes);
 
-// Global error handler
-app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
-  const statusCode = err.statusCode || 500;
-  const message = env.NODE_ENV === 'production' && statusCode === 500
-    ? 'Internal server error'
-    : err.message;
+// WhatsApp blast routes (admin only)
+app.use('/api', whatsappBlastRoutes);
 
-  console.error(`[Error] ${err.message}`, {
-    statusCode,
-    stack: env.NODE_ENV === 'development' ? err.stack : undefined,
-  });
-
-  res.status(statusCode).json({
-    success: false,
-    error: {
-      message,
-      ...(env.NODE_ENV === 'development' && { stack: err.stack }),
-    },
-  });
-});
+// Global error handler (handles ApiError, MulterError, and generic errors)
+app.use(errorHandler);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

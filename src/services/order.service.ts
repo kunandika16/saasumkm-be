@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/api-error';
-import { encodeBarcode } from '../utils/barcode';
+import { validateRewardVoucher, applyRewardVoucher, calculateRewardDiscount } from './reward-voucher.service';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -12,6 +12,8 @@ export interface CreateOrderInput {
     quantity: number;
   }>;
   voucherCode?: string;
+  rewardVoucherCode?: string;
+  paymentMethod: 'cash' | 'qris';
 }
 
 export interface CreateOrderResult {
@@ -19,7 +21,7 @@ export interface CreateOrderResult {
   originalTotal: number;
   discountAmount: number;
   finalTotal: number;
-  paymentBarcode: string;
+  paymentMethod: 'cash' | 'qris';
   status: 'pending';
 }
 
@@ -54,7 +56,7 @@ export interface ExpireOrdersResult {
  * Validates: Req 6.5 — Generate unique Payment_Barcode containing Order ID and final total
  */
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
-  const { memberId, tenantId, items, voucherCode } = input;
+  const { memberId, tenantId, items, voucherCode, rewardVoucherCode, paymentMethod } = input;
 
   // Validate member exists and belongs to tenant
   const member = await prisma.member.findFirst({
@@ -105,7 +107,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     });
   }
 
-  // Apply voucher if provided
+  // Apply regular voucher if provided
   let discountAmount = 0;
   let finalTotal = originalTotal;
   let voucherId: string | null = null;
@@ -143,6 +145,46 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     voucherId = voucher.id;
   }
 
+  // Validate and calculate reward voucher discount if provided
+  let rewardVoucherId: string | null = null;
+  let rewardVoucherDiscount = 0;
+
+  if (rewardVoucherCode) {
+    const validationResult = await validateRewardVoucher(rewardVoucherCode, tenantId);
+
+    if (!validationResult.valid) {
+      throw ApiError.badRequest(validationResult.error || 'Voucher reward tidak valid');
+    }
+
+    const rewardVoucher = validationResult.voucher;
+
+    // Check if the order contains the voucher's linked menu item
+    const matchingOrderItem = orderItems.find(
+      (item) => item.menuItemId === rewardVoucher.menuItemId
+    );
+
+    if (!matchingOrderItem) {
+      throw ApiError.badRequest(
+        `Voucher hanya berlaku untuk: ${rewardVoucher.menuItem?.name || 'menu item tertentu'}`
+      );
+    }
+
+    // Calculate reward voucher discount for ONE unit of the linked menu item
+    const { discountAmount: rvDiscount } = calculateRewardDiscount(
+      matchingOrderItem.itemPrice,
+      rewardVoucher.discountType as 'free' | 'discount',
+      (rewardVoucher.discountSubType as 'fixed' | 'percentage') || null,
+      rewardVoucher.discountValue
+    );
+
+    rewardVoucherId = rewardVoucher.id;
+    rewardVoucherDiscount = rvDiscount;
+
+    // Add reward voucher discount to total discount
+    discountAmount += rewardVoucherDiscount;
+    finalTotal = Math.max(0, originalTotal - discountAmount);
+  }
+
   // Create order with all related records in a transaction
   const order = await prisma.$transaction(async (tx) => {
     // Create the order
@@ -155,20 +197,14 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         discountAmount,
         finalTotal,
         status: 'pending',
+        paymentMethod,
         items: {
           create: orderItems,
         },
       },
     });
 
-    // Generate payment barcode after we have the order ID
-    const paymentBarcode = encodeBarcode(createdOrder.id, finalTotal);
-    const updatedOrder = await tx.order.update({
-      where: { id: createdOrder.id },
-      data: { paymentBarcode },
-    });
-
-    // If voucher was used, increment usage and record usage
+    // If regular voucher was used, increment usage and record usage
     if (voucherId) {
       await tx.voucher.update({
         where: { id: voucherId },
@@ -184,7 +220,19 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       });
     }
 
-    return updatedOrder;
+    // If reward voucher was used, mark as used
+    if (rewardVoucherId) {
+      await tx.rewardVoucher.update({
+        where: { id: rewardVoucherId },
+        data: {
+          isUsed: true,
+          usedAt: new Date(),
+          orderId: createdOrder.id,
+        },
+      });
+    }
+
+    return createdOrder;
   });
 
   return {
@@ -192,7 +240,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     originalTotal: order.originalTotal,
     discountAmount: order.discountAmount,
     finalTotal: order.finalTotal,
-    paymentBarcode: order.paymentBarcode!,
+    paymentMethod: order.paymentMethod as 'cash' | 'qris',
     status: 'pending',
   };
 }
@@ -422,6 +470,21 @@ export async function validatePayment(
         await tx.voucher.update({
           where: { id: order.voucherId },
           data: { currentUsage: { decrement: 1 } },
+        });
+      }
+
+      // Restore reward voucher if one was applied to this order
+      const rewardVoucherOnOrder = await tx.rewardVoucher.findFirst({
+        where: { orderId: order.id },
+      });
+      if (rewardVoucherOnOrder) {
+        await tx.rewardVoucher.update({
+          where: { id: rewardVoucherOnOrder.id },
+          data: {
+            isUsed: false,
+            usedAt: null,
+            orderId: null,
+          },
         });
       }
 

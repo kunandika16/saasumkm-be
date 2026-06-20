@@ -20,7 +20,7 @@
     },
     {
       "name": "Admin Panel",
-      "tags": ["Admin - Analytics", "Admin - Orders", "Admin - Vouchers", "Admin - Rewards", "Admin - Menu", "Admin - Members", "Admin - Settings", "Admin - Upload"]
+      "tags": ["Admin - Analytics", "Admin - Orders", "Admin - Vouchers", "Admin - Rewards", "Admin - Menu", "Admin - Members", "Admin - Settings", "Admin - Upload", "Admin - WhatsApp Blast"]
     },
     {
       "name": "System",
@@ -43,6 +43,7 @@
     { "name": "Admin - Members", "description": "Lihat daftar member terdaftar" },
     { "name": "Admin - Settings", "description": "Pengaturan tenant: poin, voucher welcome, Google Review, branding" },
     { "name": "Admin - Upload", "description": "Upload file gambar untuk menu" },
+    { "name": "Admin - WhatsApp Blast", "description": "WhatsApp Blast: sesi koneksi, template pesan, blast massal, kirim individual" },
     { "name": "System", "description": "Health check endpoint untuk monitoring server" }
   ],
   "paths": {
@@ -576,7 +577,8 @@
                   { "menuItemId": "e5f6a7b8-c9d0-1234-efgh-567890123456", "quantity": 2 },
                   { "menuItemId": "f6a7b8c9-d012-3456-fghi-678901234567", "quantity": 1 }
                 ],
-                "voucherCode": "DISKON10"
+                "voucherCode": "DISKON10",
+                "paymentMethod": "cash"
               }
             }
           }
@@ -679,6 +681,62 @@
                 "example": {
                   "success": false,
                   "error": { "message": "Member access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{orderId}": {
+      "get": {
+        "tags": ["Member - Ordering"],
+        "summary": "Get single order status",
+        "description": "Mengambil status order tertentu milik member yang sedang login.",
+        "operationId": "getMemberOrderStatus",
+        "security": [{ "memberAuth": [] }],
+        "parameters": [
+          { "name": "orderId", "in": "path", "required": true, "description": "ID order yang mau dilihat", "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail order",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "f7a8b9c0-d1e2-3456-ghij-789012345678",
+                    "status": "paid",
+                    "pointsEarned": 6,
+                    "paymentMethod": "cash",
+                    "finalTotal": 63000
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member access required" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Order tidak ditemukan" }
                 }
               }
             }
@@ -1538,6 +1596,60 @@
       }
     },
     "/api/admin/rewards": {
+      "get": {
+        "tags": ["Admin - Rewards"],
+        "summary": "List semua reward",
+        "description": "Menampilkan daftar semua reward (aktif dan nonaktif) untuk tenant admin.",
+        "operationId": "listRewards",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar reward",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "rewards": [
+                      {
+                        "id": "r-001",
+                        "name": "Free Coffee",
+                        "description": "Gratis 1 kopi espresso",
+                        "requiredPoints": 50,
+                        "stockQuantity": 20,
+                        "isActive": true,
+                        "createdAt": "2025-07-15T10:30:00.000Z"
+                      },
+                      {
+                        "id": "r-002",
+                        "name": "Discount 50%",
+                        "description": "Potongan 50% untuk 1 menu",
+                        "requiredPoints": 100,
+                        "stockQuantity": 5,
+                        "isActive": false,
+                        "createdAt": "2025-06-01T08:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": ["Admin - Rewards"],
         "summary": "Buat reward baru",
@@ -2225,6 +2337,538 @@
         }
       }
     },
+    "/api/admin/whatsapp/status": {
+      "get": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "WhatsApp connection status",
+        "description": "Mengecek status koneksi WhatsApp Web (connected/disconnected). Proxy ke Python WhatsApp service.",
+        "operationId": "getWhatsappStatus",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Status koneksi WhatsApp",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "status": "connected",
+                    "phone": "081234567890"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Layanan WhatsApp tidak tersedia",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Layanan WhatsApp tidak tersedia", "code": "SERVICE_UNAVAILABLE" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/qr": {
+      "get": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Request QR code for WhatsApp session",
+        "description": "Meminta QR code untuk menghubungkan sesi WhatsApp Web baru. QR code digunakan untuk scan dari WhatsApp mobile app.",
+        "operationId": "getWhatsappQR",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "QR code untuk scan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "qr": "2@abc123...",
+                    "expiresIn": 30
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Layanan WhatsApp tidak tersedia",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Layanan WhatsApp tidak tersedia", "code": "SERVICE_UNAVAILABLE" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/disconnect": {
+      "post": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Disconnect WhatsApp session",
+        "description": "Memutuskan koneksi sesi WhatsApp Web yang sedang aktif.",
+        "operationId": "disconnectWhatsapp",
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Sesi berhasil diputuskan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "status": "disconnected"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Layanan WhatsApp tidak tersedia",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Layanan WhatsApp tidak tersedia", "code": "SERVICE_UNAVAILABLE" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/templates/{category}": {
+      "get": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Get message template by category",
+        "description": "Mengambil template pesan WhatsApp sesuai kategori. Template menggunakan placeholder {{nama}} yang akan di-resolve otomatis. Kategori 'custom' mengembalikan string kosong (admin tulis sendiri).",
+        "operationId": "getBlastTemplate",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "description": "Kategori blast",
+            "schema": { "type": "string", "enum": ["reminder", "promo", "announcement", "custom"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template pesan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "examples": {
+                  "reminder": {
+                    "summary": "Template reminder",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "category": "reminder",
+                        "template": "Halo {{nama}} 👋\n\nUdah lama nih kita nggak keteme! Kangen deh sama kamu 😊\n\nYuk mampir lagi ke tempat kita..."
+                      }
+                    }
+                  },
+                  "promo": {
+                    "summary": "Template promo",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "category": "promo",
+                        "template": "Halo {{nama}} 👋\n\nAda kabar gembira nih buat kamu! 🎉\n\n[Tulis detail promo kamu di sini]..."
+                      }
+                    }
+                  },
+                  "custom": {
+                    "summary": "Custom (empty template)",
+                    "value": {
+                      "success": true,
+                      "data": { "category": "custom", "template": "" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/recipients": {
+      "get": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Get recipient count",
+        "description": "Menghitung jumlah penerima blast berdasarkan kategori dan filter. Untuk kategori reminder, inactivityPeriod wajib diisi. Mengembalikan jumlah penerima dan sample recipient.",
+        "operationId": "getBlastRecipients",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": true,
+            "description": "Kategori blast",
+            "schema": { "type": "string", "enum": ["reminder", "promo", "announcement", "custom"] }
+          },
+          {
+            "name": "inactivityPeriod",
+            "in": "query",
+            "required": false,
+            "description": "Periode ketidakaktifan (wajib untuk reminder). 1week=7 hari, 1month=30 hari, 3months=90 hari",
+            "schema": { "type": "string", "enum": ["1week", "1month", "3months"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Jumlah penerima dan sample",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "count": 25,
+                    "sampleRecipient": {
+                      "name": "Andi Wijaya",
+                      "whatsapp": "081234567890"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "missingInactivity": {
+                    "summary": "Inactivity period wajib untuk reminder",
+                    "value": { "success": false, "error": { "message": "Periode ketidakaktifan wajib diisi untuk kategori reminder" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/blast": {
+      "post": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Create and execute blast job",
+        "description": "Membuat job blast WhatsApp dan langsung mengirim ke semua penerima yang cocok. Pesan bisa menggunakan placeholder {{nama}} yang otomatis di-resolve. Untuk kategori reminder, inactivityPeriod wajib.",
+        "operationId": "createBlastJob",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BlastRequest" },
+              "example": {
+                "category": "reminder",
+                "inactivityPeriod": "1month",
+                "message": "Halo {{nama}} 👋 Udah lama nih kita nggak ketemu! Yuk mampir lagi ya 🙏"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Blast job berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "jobId": "j1a2b3c4-d5e6-7890-fghi-123456789012",
+                    "status": "in_progress",
+                    "totalRecipients": 25
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "missingInactivity": {
+                    "summary": "Inactivity period wajib untuk reminder",
+                    "value": { "success": false, "error": { "message": "Periode ketidakaktifan wajib diisi untuk kategori reminder" } }
+                  },
+                  "emptyMessage": {
+                    "summary": "Pesan kosong",
+                    "value": { "success": false, "error": { "message": "Pesan tidak boleh kosong" } }
+                  },
+                  "noRecipients": {
+                    "summary": "Tidak ada penerima",
+                    "value": { "success": false, "error": { "message": "Tidak ada penerima yang cocok dengan filter" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/blast/{jobId}/status": {
+      "get": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Get blast job progress",
+        "description": "Mengambil status progress blast job: jumlah terkirim, gagal, dan daftar penerima yang gagal.",
+        "operationId": "getBlastJobStatus",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "ID blast job",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status blast job",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "jobId": "j1a2b3c4-d5e6-7890-fghi-123456789012",
+                    "status": "completed",
+                    "totalRecipients": 25,
+                    "sentCount": 23,
+                    "failedCount": 2,
+                    "lastSentIndex": 25,
+                    "completedAt": "2025-07-15T11:00:00.000Z",
+                    "failedRecipients": [
+                      { "name": "Dewi Lestari", "whatsapp": "082222222222", "reason": "Number not registered on WhatsApp" }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Blast job tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Blast job tidak ditemukan" }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Layanan WhatsApp tidak tersedia",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Layanan WhatsApp tidak tersedia", "code": "SERVICE_UNAVAILABLE" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/whatsapp/send-single": {
+      "post": {
+        "tags": ["Admin - WhatsApp Blast"],
+        "summary": "Send message to individual member",
+        "description": "Mengirim pesan WhatsApp ke satu member tertentu. Pesan bisa menggunakan placeholder {{nama}} yang otomatis di-resolve.",
+        "operationId": "sendSingleWhatsapp",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SendSingleBlastRequest" },
+              "example": {
+                "memberId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "category": "promo",
+                "message": "Halo {{nama}} 👋 Ada promo spesial nih buat kamu! 🎉"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pesan berhasil dikirim",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "data": { "success": true }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error atau gagal kirim",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "emptyMessage": {
+                    "summary": "Pesan kosong",
+                    "value": { "success": false, "error": { "message": "Pesan tidak boleh kosong" } }
+                  },
+                  "noWhatsApp": {
+                    "summary": "Member tidak punya nomor WhatsApp",
+                    "value": { "success": false, "error": { "message": "Member tidak memiliki nomor WhatsApp" } }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Member tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Member tidak ditemukan" }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Layanan WhatsApp tidak tersedia",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Layanan WhatsApp tidak tersedia", "code": "SERVICE_UNAVAILABLE" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token admin tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "success": false,
+                  "error": { "message": "Admin access required" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/upload/image": {
       "post": {
         "tags": ["Admin - Upload"],
@@ -2387,7 +3031,7 @@
       },
       "CheckoutRequest": {
         "type": "object",
-        "required": ["items"],
+        "required": ["items", "paymentMethod"],
         "properties": {
           "items": {
             "type": "array",
@@ -2402,7 +3046,8 @@
               }
             }
           },
-          "voucherCode": { "type": "string", "maxLength": 20, "description": "Kode voucher untuk diskon (opsional)" }
+          "voucherCode": { "type": "string", "maxLength": 20, "description": "Kode voucher untuk diskon (opsional)" },
+          "paymentMethod": { "type": "string", "enum": ["cash", "qris"], "description": "Metode pembayaran: cash (tunai) atau qris" }
         }
       },
       "CreateVoucherRequest": {
@@ -2451,6 +3096,24 @@
           "welcomeVoucherType": { "type": "string", "enum": ["percentage", "fixed"], "nullable": true, "description": "Tipe welcome voucher untuk member baru" },
           "welcomeVoucherValue": { "type": "integer", "minimum": 1, "nullable": true, "description": "Nilai welcome voucher" },
           "welcomeVoucherDays": { "type": "integer", "minimum": 1, "nullable": true, "description": "Masa berlaku welcome voucher dalam hari" }
+        }
+      },
+      "BlastRequest": {
+        "type": "object",
+        "required": ["category", "message"],
+        "properties": {
+          "category": { "type": "string", "enum": ["reminder", "promo", "announcement", "custom"], "description": "Kategori blast pesan" },
+          "inactivityPeriod": { "type": "string", "enum": ["1week", "1month", "3months"], "description": "Periode ketidakaktifan (wajib untuk kategori reminder). 1week=7 hari, 1month=30 hari, 3months=90 hari" },
+          "message": { "type": "string", "minLength": 1, "maxLength": 1000, "description": "Pesan blast. Gunakan {{nama}} sebagai placeholder nama penerima. Maks 1000 karakter." }
+        }
+      },
+      "SendSingleBlastRequest": {
+        "type": "object",
+        "required": ["memberId", "category", "message"],
+        "properties": {
+          "memberId": { "type": "string", "description": "ID member yang mau dikirimi pesan" },
+          "category": { "type": "string", "enum": ["reminder", "promo", "announcement", "custom"], "description": "Kategori pesan" },
+          "message": { "type": "string", "minLength": 1, "maxLength": 1000, "description": "Pesan yang mau dikirim. Gunakan {{nama}} sebagai placeholder nama member." }
         }
       }
     }

@@ -14,6 +14,38 @@ import {
 import { ApiError } from '../utils/api-error';
 import { z } from 'zod';
 
+/**
+ * Uploads a file buffer to Cloudflare R2 and returns the public URL.
+ * Returns null if upload fails (logs error, allows item to be saved without image).
+ */
+async function uploadImageToR2(file: Express.Multer.File): Promise<string | null> {
+  const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+  const filename = `${Date.now()}-${randomUUID()}${ext}`;
+  const key = `menu/${filename}`;
+
+  try {
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+    );
+
+    return `${R2_PUBLIC_URL}/${key}`;
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('[R2 Upload Error]', {
+      bucket: R2_BUCKET,
+      key,
+      error: errMsg,
+    });
+    // Return null — caller decides whether to fail or continue without image
+    return null;
+  }
+}
+
 const router = Router();
 
 /**
@@ -125,21 +157,12 @@ router.post(
 
     // Upload image to R2 if provided
     let imageUrl: string | null = null;
+    let imageWarning: string | undefined;
     if (req.file) {
-      const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
-      const filename = `${Date.now()}-${randomUUID()}${ext}`;
-      const key = `menu/${filename}`;
-
-      await r2Client.send(
-        new PutObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-        })
-      );
-
-      imageUrl = `${R2_PUBLIC_URL}/${key}`;
+      imageUrl = await uploadImageToR2(req.file);
+      if (!imageUrl) {
+        imageWarning = 'Menu berhasil disimpan, tetapi gambar gagal diupload. Periksa konfigurasi R2 storage.';
+      }
     }
 
     const item = await prisma.menuItem.create({
@@ -157,6 +180,7 @@ router.post(
     res.status(201).json({
       success: true,
       data: item,
+      ...(imageWarning && { warning: imageWarning }),
     });
   })
 );
@@ -202,21 +226,14 @@ router.patch(
     }
 
     // Upload new image to R2 if provided
+    let imageWarning: string | undefined;
     if (req.file) {
-      const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
-      const filename = `${Date.now()}-${randomUUID()}${ext}`;
-      const key = `menu/${filename}`;
-
-      await r2Client.send(
-        new PutObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-        })
-      );
-
-      updateData.imageUrl = `${R2_PUBLIC_URL}/${key}`;
+      const uploadedUrl = await uploadImageToR2(req.file);
+      if (uploadedUrl) {
+        updateData.imageUrl = uploadedUrl;
+      } else {
+        imageWarning = 'Perubahan disimpan, tetapi gambar gagal diupload. Periksa konfigurasi R2 storage.';
+      }
     } else if (req.body.imageUrl === 'null' || req.body.imageUrl === '') {
       // Explicitly remove image
       updateData.imageUrl = null;
@@ -230,6 +247,7 @@ router.patch(
     res.status(200).json({
       success: true,
       data: updated,
+      ...(imageWarning && { warning: imageWarning }),
     });
   })
 );

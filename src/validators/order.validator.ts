@@ -27,6 +27,15 @@ export const CheckoutRequestSchema = z.object({
     .min(1, 'Kode voucher tidak boleh kosong')
     .max(20, 'Kode voucher maksimal 20 karakter')
     .optional(),
+  rewardVoucherCode: z
+    .string()
+    .min(1, 'Kode voucher reward tidak boleh kosong')
+    .max(20, 'Kode voucher reward maksimal 20 karakter')
+    .optional(),
+  paymentMethod: z.enum(['cash', 'qris'], {
+    required_error: 'Metode pembayaran harus dipilih',
+    invalid_type_error: 'Metode pembayaran harus cash atau qris',
+  }),
 });
 
 export type CheckoutRequest = z.infer<typeof CheckoutRequestSchema>;

@@ -42,6 +42,46 @@ async function uploadToR2(file: Express.Multer.File, folder: string): Promise<st
   return `${R2_PUBLIC_URL}/${key}`;
 }
 
+// ─── GET /api/tenant ─────────────────────────────────────────────────────────
+// Member-facing: returns tenant public info + landing page URL.
+// Requires authentication (uses tenantId from JWT).
+
+router.get(
+  '/tenant',
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const tenantId = req.user!.tenantId;
+
+    const [tenant, settings] = await Promise.all([
+      prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          id: true,
+          businessName: true,
+          slug: true,
+          description: true,
+          logoUrl: true,
+          bannerUrl: true,
+          locationMapUrl: true,
+          socialLinks: true,
+        },
+      }),
+      prisma.tenantSettings.findUnique({
+        where: { tenantId },
+      }),
+    ]);
+
+    if (!tenant) {
+      throw ApiError.notFound('Tenant tidak ditemukan');
+    }
+
+    res.json({
+      success: true,
+      data: { ...tenant, landingPageUrl: (settings as Record<string, unknown>)?.landingPageUrl ?? null },
+    });
+  })
+);
+
 // ─── GET /api/admin/settings ─────────────────────────────────────────────────
 
 router.get(
@@ -69,7 +109,7 @@ router.get(
 
     res.json({
       success: true,
-      data: { ...settings, tenant },
+      data: { ...settings, tenantId, tenant },
     });
   })
 );

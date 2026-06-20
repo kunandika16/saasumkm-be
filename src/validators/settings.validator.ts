@@ -73,6 +73,12 @@ export const UpdateSettingsRequestSchema = z.object({
     .min(1, 'Masa berlaku voucher welcome minimal 1 hari')
     .optional()
     .nullable(),
+  landingPageUrl: z
+    .string()
+    .url('URL landing page tidak valid')
+    .max(500, 'URL landing page maksimal 500 karakter')
+    .optional()
+    .nullable(),
 });
 
 export type UpdateSettingsRequest = z.infer<typeof UpdateSettingsRequestSchema>;

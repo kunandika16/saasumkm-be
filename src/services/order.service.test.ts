@@ -45,6 +45,7 @@ describe('createOrder', () => {
     memberId: 'member-1',
     tenantId: 'tenant-1',
     items: [{ menuItemId: 'menu-1', quantity: 2 }],
+    paymentMethod: 'cash' as const,
   };
 
   it('throws if member not found', async () => {
@@ -82,15 +83,14 @@ describe('createOrder', () => {
       originalTotal: 50000,
       discountAmount: 0,
       finalTotal: 50000,
-      paymentBarcode: 'barcode-123',
+      paymentMethod: 'cash',
       status: 'pending',
     };
 
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
       const tx = {
         order: {
-          create: vi.fn().mockResolvedValue({ ...createdOrder, paymentBarcode: null }),
-          update: vi.fn().mockResolvedValue(createdOrder),
+          create: vi.fn().mockResolvedValue(createdOrder),
         },
         voucher: { update: vi.fn() },
         voucherUsage: { create: vi.fn() },
@@ -128,16 +128,15 @@ describe('createOrder', () => {
       originalTotal: 50000,
       discountAmount: 5000,
       finalTotal: 45000,
-      paymentBarcode: 'barcode-123',
+      paymentMethod: 'cash',
       status: 'pending',
     };
 
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
       const tx = {
         order: {
-          create: vi.fn().mockResolvedValue({ ...createdOrder, paymentBarcode: null }),
-          update: vi.fn().mockResolvedValue(createdOrder),
-        },
+          create: vi.fn().mockResolvedValue(createdOrder),
+                  },
         voucher: { update: vi.fn() },
         voucherUsage: { create: vi.fn() },
       };
@@ -177,16 +176,15 @@ describe('createOrder', () => {
       originalTotal: 50000,
       discountAmount: 5000,
       finalTotal: 45000,
-      paymentBarcode: 'barcode-123',
+      paymentMethod: 'cash',
       status: 'pending',
     };
 
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
       const tx = {
         order: {
-          create: vi.fn().mockResolvedValue({ ...createdOrder, paymentBarcode: null }),
-          update: vi.fn().mockResolvedValue(createdOrder),
-        },
+          create: vi.fn().mockResolvedValue(createdOrder),
+                  },
         voucher: { update: vi.fn() },
         voucherUsage: { create: vi.fn() },
       };
@@ -338,6 +336,7 @@ describe('validatePayment', () => {
         member: { update: vi.fn() },
         voucher: { update: voucherUpdate },
         pointTransaction: { create: vi.fn() },
+        rewardVoucher: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
       };
       return fn(tx);
     });

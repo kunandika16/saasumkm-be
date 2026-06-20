@@ -46,6 +46,8 @@ describe('reward.service', () => {
         requiredPoints: 50,
         stockQuantity: 10,
         isActive: true,
+        menuItemId: 'menu-item-1',
+        discountType: 'free' as const,
       };
 
       const mockReward = { id: 'reward-1', ...input, createdAt: new Date() };
@@ -61,6 +63,11 @@ describe('reward.service', () => {
           requiredPoints: 50,
           stockQuantity: 10,
           isActive: true,
+          menuItemId: 'menu-item-1',
+          discountType: 'free',
+          discountSubType: null,
+          discountValue: null,
+          imageUrl: null,
         },
       });
       expect(result).toEqual(mockReward);
@@ -72,6 +79,10 @@ describe('reward.service', () => {
         name: 'Discount',
         requiredPoints: 100,
         stockQuantity: 5,
+        menuItemId: 'menu-item-2',
+        discountType: 'discount' as const,
+        discountSubType: 'percentage' as const,
+        discountValue: 20,
       };
 
       const mockReward = {
@@ -93,6 +104,11 @@ describe('reward.service', () => {
           requiredPoints: 100,
           stockQuantity: 5,
           isActive: true,
+          menuItemId: 'menu-item-2',
+          discountType: 'discount',
+          discountSubType: 'percentage',
+          discountValue: 20,
+          imageUrl: null,
         },
       });
     });

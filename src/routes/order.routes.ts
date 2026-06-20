@@ -41,13 +41,15 @@ router.post(
       throw ApiError.unauthorized('Member access required');
     }
 
-    const { items, voucherCode } = req.body;
+    const { items, voucherCode, rewardVoucherCode, paymentMethod } = req.body;
 
     const result = await createOrder({
       memberId: req.user.memberId,
       tenantId: req.user.tenantId,
       items,
       voucherCode,
+      rewardVoucherCode,
+      paymentMethod,
     });
 
     res.status(201).json({
@@ -75,6 +77,41 @@ router.get(
     res.status(200).json({
       success: true,
       data: result,
+    });
+  })
+);
+
+// ─── GET /api/orders/:orderId — Member get single order status ───────────────
+
+router.get(
+  '/orders/:orderId',
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.memberId) {
+      throw ApiError.unauthorized('Member access required');
+    }
+
+    const order = await prisma.order.findFirst({
+      where: {
+        id: req.params.orderId as string,
+        memberId: req.user.memberId,
+      },
+      select: {
+        id: true,
+        status: true,
+        pointsEarned: true,
+        paymentMethod: true,
+        finalTotal: true,
+      },
+    });
+
+    if (!order) {
+      throw ApiError.notFound('Order tidak ditemukan');
+    }
+
+    res.status(200).json({
+      success: true,
+      data: order,
     });
   })
 );

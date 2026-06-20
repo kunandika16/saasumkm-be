@@ -35,6 +35,9 @@ const envSchema = z.object({
   FONNTE_API_URL: z.string().default('https://api.fonnte.com/send'),
   FONNTE_TOKEN: z.string().optional(),
   FONNTE_API_KEY: z.string().optional(),
+
+  // WhatsApp Python Service
+  WA_PYTHON_SERVICE_URL: z.string().default('http://localhost:8001'),
 });
 
 const parsed = envSchema.safeParse(process.env);
